@@ -5,6 +5,11 @@ import { handleSocket } from './controllers/messageController';
 import roomRouter from './routes/v1/room.route';
 
 const app = express();
+app.use((req,res, next)=> {
+  res.header('Access-Control-Allow-Origin', "*");
+  next();
+})
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
