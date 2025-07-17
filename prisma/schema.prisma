@@ -13,7 +13,7 @@ model Room {
   name              String    @db.VarChar(45)
   short_description String    @db.VarChar(45)
   full_description  String    @db.VarChar(300)
-  icon              String?   @db.VarChar(200)
-  color             String?   @db.VarChar(20)
+  server_banner     String    @db.VarChar(200)
+  server_icon       String    @db.VarChar(200)
   created_at        DateTime? @default(now()) @db.DateTime(0)
 }
