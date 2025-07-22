@@ -51,7 +51,7 @@ export function handleSocket(socket: Socket, io: Server) {
   });
 
   // Evento para enviar imagen a la sala
-  socket.on('image', (image: Buffer) => {
+  socket.on('image', (data: { image: Buffer; description?: string }) => {
     const room = socket.data.room;
     const username = socket.data.username || 'Anónimo';
     if (!room) {
@@ -60,7 +60,8 @@ export function handleSocket(socket: Socket, io: Server) {
     }
     io.to(room).emit('image', {
       username,
-      image,
+      image: data.image,
+      description: data.description,
       timestamp: new Date().toISOString(),
     });
   });
