@@ -5,7 +5,7 @@ import { handleSocket } from './controllers/messageController';
 import roomRouter from './routes/v1/room.route';
 
 const app = express();
-app.use((req,res, next)=> {
+app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', "*");
   next();
 })
@@ -15,13 +15,14 @@ const io = new Server(server, {
   cors: {
     origin: '*',
   },
+  maxHttpBufferSize: 1e7,
 });
 
 io.on('connection', (socket) => {
   handleSocket(socket, io);
 });
 
-app.use('/api/v1/room',roomRouter);
+app.use('/api/v1/room', roomRouter);
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {

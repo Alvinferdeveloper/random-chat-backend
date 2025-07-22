@@ -50,6 +50,21 @@ export function handleSocket(socket: Socket, io: Server) {
     });
   });
 
+  // Evento para enviar imagen a la sala
+  socket.on('image', (image: Buffer) => {
+    const room = socket.data.room;
+    const username = socket.data.username || 'Anónimo';
+    if (!room) {
+      socket.emit('error', 'No estás en una sala');
+      return;
+    }
+    io.to(room).emit('image', {
+      username,
+      image,
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   // Evento de desconexión
   socket.on('disconnect', () => {
     const room = socket.data.room;
