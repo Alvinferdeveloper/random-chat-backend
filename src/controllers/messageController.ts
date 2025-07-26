@@ -67,13 +67,13 @@ export function handleSocket(socket: Socket, io: Server) {
   });
 
   // Evento de desconexión
-  socket.on('disconnect', () => {
-    const room = socket.data.room;
-    const username = socket.data.username || 'Anónimo';
-    if (room && roomState[room] && socket.rooms.has(room)) {
+  socket.on('disconnecting', () => {
+    const room = Array.from(socket.rooms).find(r => r !== socket.id);
+    if (room && roomState[room]) {
+      const username = socket.data.username || 'Anónimo';
       roomState[room].userCount--;
       io.emit('userCount', { roomId: room, count: roomState[room].userCount });
-      socket.to(room).emit('userLeft', `${username} ha salido de la sala ${room}`);
+      socket.to(room).emit('userLeft', `${username} ha salido de la sala`);
     }
   });
 }
