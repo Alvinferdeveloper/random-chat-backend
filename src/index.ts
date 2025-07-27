@@ -1,7 +1,8 @@
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
-import { handleSocket } from './controllers/messageController';
+import { handleSocketEvents } from './controllers/messageController';
+import { ChatService } from './services/chat.service';
 import roomRouter from './routes/v1/room.route';
 
 const app = express();
@@ -18,8 +19,10 @@ const io = new Server(server, {
   maxHttpBufferSize: 1e7,
 });
 
+const chatService = new ChatService(io);
+
 io.on('connection', (socket) => {
-  handleSocket(socket, io);
+  handleSocketEvents(socket, chatService);
 });
 
 app.use('/api/v1/room', roomRouter);
