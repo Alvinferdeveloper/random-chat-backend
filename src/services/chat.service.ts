@@ -1,92 +1,139 @@
 import { Server, Socket } from 'socket.io';
 import { roomExist } from './room.service';
 
-const roomState: Record<string, { userCount: number }> = {};
+const MAX_USERS_PER_SUBROOM = process.env.MAX_USERS_PER_SUBROOM || 20;
+type subRoom = {
+    name: string;
+    usercount: number;
+};
+
+type RoomStateValue = {
+    subRooms: subRoom[];
+    nextSubRoom: number;
+};
+
+const roomState: Record<string, RoomStateValue> = {};
 
 export class ChatService {
-  private io: Server;
+    private io: Server;
 
-  constructor(io: Server) {
-    this.io = io;
-  }
-
-  public handleConnection(socket: Socket): void {
-    socket.on('getInitialRoomState', () => this.getInitialRoomState(socket));
-    socket.on('joinRoom', (room, username) => this.joinRoom(socket, room, username));
-    socket.on('leaveRoom', (room) => this.leaveRoom(socket, room));
-    socket.on('message', (message) => this.handleMessage(socket, message));
-    socket.on('image', (data) => this.handleImage(socket, data));
-    socket.on('disconnecting', () => this.handleDisconnect(socket));
-  }
-
-  private getInitialRoomState(socket: Socket): void {
-    socket.emit('initialRoomState', roomState);
-  }
-
-  private async joinRoom(socket: Socket, room: string, username: string): Promise<void> {
-    if (!await roomExist(room)) {
-      socket.emit('error', 'La sala no existe');
-      return;
+    constructor(io: Server) {
+        this.io = io;
     }
 
-    socket.join(room);
-    socket.data.username = username;
-    socket.data.room = room;
-
-    if (!roomState[room]) {
-      roomState[room] = { userCount: 0 };
+    public handleConnection(socket: Socket): void {
+        socket.on('getInitialRoomState', () => this.getInitialRoomState(socket));
+        socket.on('joinRoom', (room, username) => this.joinRoom(socket, room, username));
+        socket.on('leaveRoom', () => this.leaveRoom(socket));
+        socket.on('message', (message) => this.handleMessage(socket, message));
+        socket.on('image', (data) => this.handleImage(socket, data));
+        socket.on('disconnecting', () => this.handleDisconnect(socket));
     }
-    roomState[room].userCount++;
 
-    socket.emit('joinedRoom', room);
-    socket.to(room).emit('userJoined', `${username} se ha unido a la sala ${room}`);
-    this.io.emit('userCount', { roomId: room, count: roomState[room].userCount });
-  }
-
-  private leaveRoom(socket: Socket, room: string): void {
-    if (roomState[room]) {
-      roomState[room].userCount--;
-      this.io.emit('userCount', { roomId: room, count: roomState[room].userCount });
-      socket.leave(room);
+    private getInitialRoomState(socket: Socket): void {
+        const state = Object.fromEntries(
+            Object.entries(roomState).map(([room, state]) => [
+                room,
+                { userCount: state.subRooms.reduce((acc, sr) => acc + sr.usercount, 0) }
+            ])
+        );
+        socket.emit('initialRoomState', state);
     }
-  }
 
-  private handleMessage(socket: Socket, message: string): void {
-    const room = socket.data.room;
-    const username = socket.data.username || 'Anónimo';
-    if (!room) {
-      socket.emit('error', 'No estás en una sala');
-      return;
-    }
-    this.io.to(room).emit('message', {
-      username,
-      message,
-      timestamp: new Date().toISOString(),
-    });
-  }
+    private async joinRoom(socket: Socket, parentRoom: string, username: string): Promise<void> {
+        if (!await roomExist(parentRoom)) {
+            socket.emit('error', 'La sala no existe');
+            return;
+        }
 
-  private handleImage(socket: Socket, data: { image: Buffer; description?: string }): void {
-    const room = socket.data.room;
-    const username = socket.data.username || 'Anónimo';
-    if (!room) {
-      socket.emit('error', 'No estás en una sala');
-      return;
-    }
-    this.io.to(room).emit('image', {
-      username,
-      image: data.image,
-      description: data.description,
-      timestamp: new Date().toISOString(),
-    });
-  }
+        if (!roomState[parentRoom]) {
+            roomState[parentRoom] = { subRooms: [], nextSubRoom: 1 };
+        }
 
-  private handleDisconnect(socket: Socket): void {
-    const room = Array.from(socket.rooms).find(r => r !== socket.id);
-    if (room && roomState[room]) {
-      const username = socket.data.username || 'Anónimo';
-      roomState[room].userCount--;
-      this.io.emit('userCount', { roomId: room, count: roomState[room].userCount });
-      socket.to(room).emit('userLeft', `${username} ha salido de la sala`);
+        let targetSubRoom = roomState[parentRoom].subRooms.find(sr => sr.usercount < parseInt(MAX_USERS_PER_SUBROOM.toString()));
+
+        if (!targetSubRoom) {
+            const subRoomName = `${parentRoom}-${roomState[parentRoom].nextSubRoom}`;
+            targetSubRoom = { name: subRoomName, usercount: 0 };
+            roomState[parentRoom].subRooms.push(targetSubRoom);
+            roomState[parentRoom].nextSubRoom++;
+        }
+
+        await socket.join(targetSubRoom.name);
+        targetSubRoom.usercount++;
+
+        socket.data.username = username;
+        socket.data.subRoomName = targetSubRoom.name;
+        socket.data.parentRoom = parentRoom;
+
+        socket.emit('joinedRoom', targetSubRoom.name);
+        socket.to(targetSubRoom.name).emit('userJoined', `${username} se ha unido a la sala.`);
+
+        const totalUsers = roomState[parentRoom].subRooms.reduce((sum, sr) => sum + sr.usercount, 0);
+        this.io.emit('userCount', { roomId: parentRoom, count: totalUsers });
     }
-  }
+
+
+
+    private leaveRoom(socket: Socket): void {
+        const { subRoomName } = socket.data;
+        if (subRoomName) {
+            socket.leave(subRoomName);
+            this.handleDisconnect(socket);
+        }
+    }
+
+    private handleMessage(socket: Socket, message: string): void {
+        const room = socket.data.subRoomName
+        const username = socket.data.username || 'Anónimo';
+        if (!room) {
+            socket.emit('error', 'No estás en una sala');
+            return;
+        }
+        this.io.to(room).emit('message', {
+            username,
+            message,
+            timestamp: new Date().toISOString(),
+        });
+    }
+
+    private handleImage(socket: Socket, data: { image: Buffer; description?: string }): void {
+        const room = socket.data.subRoomName;
+        const username = socket.data.username || 'Anónimo';
+        if (!room) {
+            socket.emit('error', 'No estás en una sala');
+            return;
+        }
+        this.io.to(room).emit('image', {
+            username,
+            image: data.image,
+            description: data.description,
+            timestamp: new Date().toISOString(),
+        });
+    }
+
+    private handleDisconnect(socket: Socket): void {
+        const { parentRoom, subRoomName, username } = socket.data;
+
+        if (!parentRoom || !subRoomName) {
+            return;
+        }
+
+        const roomData = roomState[parentRoom];
+        if (!roomData) return;
+
+        const subRoom = roomData.subRooms.find(sr => sr.name === subRoomName);
+        if (subRoom) {
+            subRoom.usercount--;
+
+            socket.to(subRoomName).emit('userLeft', `${username || 'Anónimo'} ha salido de la sala.`);
+
+            if (subRoom.usercount <= 0) {
+                roomData.subRooms = roomData.subRooms.filter(sr => sr.name !== subRoomName);
+            }
+
+            const totalUsers = roomData.subRooms.reduce((sum, sr) => sum + sr.usercount, 0);
+            this.io.emit('userCount', { roomId: parentRoom, count: totalUsers });
+        }
+    }
 }
