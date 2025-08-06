@@ -66,8 +66,12 @@ export class ChatService {
         socket.data.subRoomName = targetSubRoom.name;
         socket.data.parentRoom = parentRoom;
 
-        socket.emit('joinedRoom', targetSubRoom.name);
-        socket.to(targetSubRoom.name).emit('userJoined', `${username} se ha unido a la sala.`);
+        socket.broadcast.to(targetSubRoom.name).emit('userJoined', {
+            username: username,
+            system: true,
+            message: 'se ha unido a la sala.',
+            timestamp: new Date().toISOString(),
+        });
 
         const totalUsers = roomState[parentRoom].subRooms.reduce((sum, sr) => sum + sr.usercount, 0);
         this.io.emit('userCount', { roomId: parentRoom, count: totalUsers });
