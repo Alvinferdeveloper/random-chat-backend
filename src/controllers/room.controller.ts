@@ -1,4 +1,4 @@
-import prisma from "../libs/prisma";
+import prisma from "../lib/prisma";
 import { Request, Response } from "express";
 export const getRooms = async (req: Request, res: Response) => {
     try {
