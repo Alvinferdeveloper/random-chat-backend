@@ -5,6 +5,7 @@ import { handleSocketEvents } from './controllers/messageController';
 import { ChatService } from './services/chat.service';
 import roomRouter from './routes/v1/room.routes';
 import userRouter from './routes/v1/user.routes';
+import hobbyRouter from './routes/v1/hobby.routes';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from './lib/auth';
 import cors from 'cors';
@@ -33,7 +34,8 @@ app.all("/api/auth/{*any}", toNodeHandler(auth));
 
 app.use(express.json());
 app.use('/api/v1/rooms', roomRouter);
-app.use('/api/v1', userRouter);
+app.use('/api/v1', userRouter); // Usar rutas de usuario
+app.use('/api/v1', hobbyRouter); // Usar rutas de hobbies
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
