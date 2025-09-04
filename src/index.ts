@@ -9,6 +9,7 @@ import hobbyRouter from './routes/v1/hobby.routes';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from './lib/auth';
 import cors from 'cors';
+import validateSession from './middlewares/validateSession';
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use(cors({
 
 app.all("/api/auth/{*any}", toNodeHandler(auth));
 
+app.use(validateSession);
 app.use(express.json());
 app.use('/api/v1/rooms', roomRouter);
 app.use('/api/v1', userRouter); // Usar rutas de usuario

@@ -1,24 +1,8 @@
 import { Request, Response } from 'express';
-import { auth } from '../lib/auth';
 import prisma from '../lib/prisma';
 
 export const completeUserProfile = async (req: Request, res: Response) => {
-    //transform the headers to a Headers object
-    const headers = new Headers();
-    Object.entries(req.headers).forEach(([key, value]) => {
-        if (typeof value === 'string') {
-            headers.append(key, value);
-        } else if (Array.isArray(value)) {
-            value.forEach(v => headers.append(key, v));
-        }
-    });
-
-    const session = await auth.api.getSession({ headers });
-
-    if (!session || !session.user) {
-        return res.status(401).json({ message: 'No autorizado' });
-    }
-
+    const user = req.user;
     const { username, bio, age_range, location, conversation_type, selected_hobbies } = req.body;
 
     if (!username || typeof username !== 'string' || username.length < 3) {
@@ -27,7 +11,7 @@ export const completeUserProfile = async (req: Request, res: Response) => {
 
     try {
         await prisma.user.update({
-            where: { id: session.user.id },
+            where: { id: user?.id },
             data: {
                 username: username.toLowerCase(),
                 bio,

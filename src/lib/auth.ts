@@ -16,11 +16,11 @@ export const auth = betterAuth({
     },
     plugins: [
         customSession(async ({ user, session }) => {
-            const userDoc = await prisma.user.findFirst({ where: { id: session.userId } });
+            const userDoc = await prisma.user.findFirst({ where: { id: session.userId }, select: { username: true } });
             return {
                 user: {
                     ...user,
-                    isCompleteProfile: !!userDoc?.name
+                    isCompleteProfile: !!userDoc?.username
                 },
                 session
             }
