@@ -1,7 +1,7 @@
 import { defineConfig } from "@prisma/config";
 
 export default defineConfig({
-    migrations: {
-      seed: `ts-node db/seed.ts`,
-    },
-  });
+  migrations: {
+    seed: `ts-node db/seed.ts`,
+  },
+});

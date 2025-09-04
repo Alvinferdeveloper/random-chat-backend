@@ -19,7 +19,7 @@ export const completeUserProfile = async (req: Request, res: Response) => {
         return res.status(401).json({ message: 'No autorizado' });
     }
 
-    const { username, bio } = req.body;
+    const { username, bio, age_range, location, conversation_type, selected_hobbies } = req.body;
 
     if (!username || typeof username !== 'string' || username.length < 3) {
         return res.status(400).json({ message: 'El nombre de usuario debe tener al menos 3 caracteres.' });
@@ -31,6 +31,12 @@ export const completeUserProfile = async (req: Request, res: Response) => {
             data: {
                 username: username.toLowerCase(),
                 bio,
+                ageRange: age_range,
+                location,
+                conversationType: conversation_type,
+                hobbies: {
+                    connect: selected_hobbies.map((id: string) => ({ id })),
+                },
             },
         });
         return res.status(200).json({ message: 'Perfil actualizado' });

@@ -44,6 +44,7 @@ model Hobby {
   id    String @id @default(cuid())
   name  String @unique 
   users User[]   
+  icon  String? @db.VarChar(200)
 }
 
 enum AgeRange {
