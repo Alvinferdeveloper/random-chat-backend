@@ -1,5 +1,4 @@
 import express from 'express';
-import type { RequestHandler } from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import { handleSocketEvents } from './controllers/messageController';
@@ -11,6 +10,7 @@ import { toNodeHandler } from 'better-auth/node';
 import { auth } from './lib/auth';
 import cors from 'cors';
 import validateSession from './middlewares/validateSession';
+import errorHandler from './middlewares/errorHandler';
 
 const app = express();
 
@@ -37,8 +37,10 @@ app.all("/api/auth/{*any}", toNodeHandler(auth));
 app.use(validateSession);
 app.use(express.json());
 app.use('/api/v1/rooms', roomRouter);
-app.use('/api/v1', userRouter);
-app.use('/api/v1', hobbyRouter);
+app.use('/api/v1/users', userRouter);
+app.use('/api/v1/hobbies', hobbyRouter);
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {

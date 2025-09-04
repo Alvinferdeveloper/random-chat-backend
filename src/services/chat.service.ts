@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import { roomExist } from './room.service';
+import { roomExists } from './room.service';
 
 const MAX_USERS_PER_SUBROOM = process.env.MAX_USERS_PER_SUBROOM || 20;
 type subRoom = {
@@ -41,7 +41,7 @@ export class ChatService {
     }
 
     private async joinRoom(socket: Socket, parentRoom: string, username: string): Promise<void> {
-        if (!await roomExist(parentRoom)) {
+        if (!await roomExists(parentRoom)) {
             socket.emit('error', 'La sala no existe');
             return;
         }

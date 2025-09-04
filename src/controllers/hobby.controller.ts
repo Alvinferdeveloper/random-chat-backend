@@ -1,16 +1,7 @@
 import { Request, Response } from 'express';
-import prisma from '../lib/prisma';
+import * as HobbyService from '../services/hobby.service';
 
-export const getAllHobbies = async (req: Request, res: Response) => {
-    try {
-        const hobbies = await prisma.hobby.findMany({
-            orderBy: {
-                name: 'asc',
-            },
-        });
-        return res.status(200).json(hobbies);
-    } catch (error) {
-        console.error("Error fetching hobbies:", error);
-        return res.status(500).json({ message: 'Error interno del servidor al obtener los hobbies.' });
-    }
+export const getAllHobbies = async (_req: Request, res: Response) => {
+    const hobbies = await HobbyService.getAllHobbies();
+    res.status(200).json({ success: true, data: hobbies });
 };

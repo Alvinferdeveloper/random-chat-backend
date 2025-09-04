@@ -1,7 +1,9 @@
 import { Router } from "express";
-const router = Router();
 import { getRooms } from "../../controllers/room.controller";
+import { asyncHandler } from '../../utils/asyncHandler';
 
-router.get('/',getRooms);
+const router = Router();
+
+router.get('/', asyncHandler(getRooms));
 
 export default router;

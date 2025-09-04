@@ -1,10 +1,7 @@
-import prisma from "../lib/prisma";
 import { Request, Response } from "express";
-export const getRooms = async (req: Request, res: Response) => {
-    try {
-        const rooms = await prisma.room.findMany();
-        res.json(rooms);
-    } catch (error) {
-        res.status(500).json({ error: 'Error al obtener las salas' });
-    }
+import * as RoomService from '../services/room.service';
+
+export const getRooms = async (_req: Request, res: Response) => {
+    const rooms = await RoomService.getAllRooms();
+    res.status(200).json({ success: true, data: rooms });
 };

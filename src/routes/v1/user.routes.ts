@@ -4,7 +4,7 @@ import { asyncHandler } from '../../utils/asyncHandler';
 
 const router = Router();
 
-router.post('/user/complete-profile', asyncHandler(completeUserProfile));
-router.get('/user/session', getUserSession);
+router.post('/complete-profile', asyncHandler(completeUserProfile));
+router.get('/session', asyncHandler(getUserSession));
 
 export default router;
