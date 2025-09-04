@@ -18,7 +18,6 @@ export default function validateSession(
     auth.api
         .getSession({ headers })
         .then((session) => {
-            console.log(session, "session");
             if (!session || !session.user) {
                 return res.status(401).json({ message: "No autorizado" });
             }

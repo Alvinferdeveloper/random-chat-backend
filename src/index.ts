@@ -1,4 +1,5 @@
 import express from 'express';
+import type { RequestHandler } from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import { handleSocketEvents } from './controllers/messageController';
@@ -23,6 +24,7 @@ const chatService = new ChatService(io);
 io.on('connection', (socket) => {
   handleSocketEvents(socket, chatService);
 });
+
 app.use(cors({
   origin: 'http://localhost:3000',
   methods: ['GET', 'POST', 'OPTIONS'],
@@ -30,14 +32,13 @@ app.use(cors({
   credentials: true
 }));
 
-
 app.all("/api/auth/{*any}", toNodeHandler(auth));
 
 app.use(validateSession);
 app.use(express.json());
 app.use('/api/v1/rooms', roomRouter);
-app.use('/api/v1', userRouter); // Usar rutas de usuario
-app.use('/api/v1', hobbyRouter); // Usar rutas de hobbies
+app.use('/api/v1', userRouter);
+app.use('/api/v1', hobbyRouter);
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
