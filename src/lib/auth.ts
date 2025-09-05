@@ -7,6 +7,18 @@ export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "mysql",
     }),
+    emailAndPassword: {
+        enabled: true,
+        requireEmailVerification: true,
+    },
+    emailVerification: {
+        sendVerificationEmail: async ({ user, url, token }) => {
+            console.log("--- EMAIL DE VERIFICACIÓN ---");
+            console.log(`Para: ${user.email}`);
+            console.log(`URL de Verificación: ${url}`);
+            console.log("---------------------------");
+        },
+    },
     socialProviders: {
         google: {
             prompt: "select_account",
