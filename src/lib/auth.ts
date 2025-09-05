@@ -38,6 +38,6 @@ export const auth = betterAuth({
             }
         })
     ],
-    trustedOrigins: ["http://localhost:3000", 'http://192.168.64.105:3000'],
+    trustedOrigins: [process.env.FRONTEND_URL as string],
 });
 
