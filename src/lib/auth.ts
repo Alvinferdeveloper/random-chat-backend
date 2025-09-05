@@ -2,21 +2,21 @@ import { betterAuth } from "better-auth";
 import { customSession } from 'better-auth/plugins'
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "./prisma";
+import { sendVerificationEmail } from '../services/email.service';
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "mysql",
     }),
+
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: true,
     },
     emailVerification: {
-        sendVerificationEmail: async ({ user, url, token }) => {
-            console.log("--- EMAIL DE VERIFICACIÓN ---");
-            console.log(`Para: ${user.email}`);
-            console.log(`URL de Verificación: ${url}`);
-            console.log("---------------------------");
+        sendVerificationEmail: async ({ user, url }) => {
+            console.log(url)
+            await sendVerificationEmail(user.email, url);
         },
     },
     socialProviders: {
@@ -38,5 +38,6 @@ export const auth = betterAuth({
             }
         })
     ],
-    trustedOrigins: ["http://localhost:3000"],
+    trustedOrigins: ["http://localhost:3000", 'http://192.168.64.105:3000'],
 });
+
