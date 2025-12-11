@@ -17,15 +17,12 @@ export const completeUserProfile = async (req: Request, res: Response) => {
 
 
 export const getUserSession = async (req: Request, res: Response) => {
-    try {
-        const user = req.user;
-        if (!user) {
-            res.status(401).json({ isAuthenticated: false });
-            return;
-        }
-        res.status(200).json({ isAuthenticated: true, user });
-    } catch (error) {
-        res.status(500).json({ error: 'Internal Server Error' });
+    const user = req.user;
+
+    if (!user) {
+        throw new ApiError(401, 'Usuario no autenticado.');
     }
+
+    res.status(200).json({ isAuthenticated: true, user });
 };
 
