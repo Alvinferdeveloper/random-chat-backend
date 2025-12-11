@@ -1,15 +1,10 @@
-import prisma from '../lib/prisma';
-import ApiError from '../utils/ApiError';
+import * as RoomRepository from '../repositories/room.repository';
 
 export const roomExists = async (id: string) => {
-    return prisma.room.findUnique({ where: { id } });
+    return RoomRepository.findById(id);
 };
 
 export const getAllRooms = async () => {
-    try {
-        const rooms = await prisma.room.findMany();
-        return rooms;
-    } catch (error) {
-        throw new ApiError(500, 'No se pudieron obtener las salas.');
-    }
+    const rooms = await RoomRepository.findAll();
+    return rooms;
 };
