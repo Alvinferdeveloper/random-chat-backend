@@ -4,9 +4,9 @@ import ApiError from '../utils/ApiError';
 
 export const completeUserProfile = async (req: Request, res: Response) => {
     const user = req.user;
-    const { username, bio } = req.body;
-
-    await UserService.completeUserProfile(user?.id as string, username, bio);
+    const profileData = req.body
+    console.log(profileData)
+    await UserService.completeUserProfile(user?.id as string, profileData);
 
     res.status(200).json({ success: true, message: 'Perfil actualizado' });
 };
