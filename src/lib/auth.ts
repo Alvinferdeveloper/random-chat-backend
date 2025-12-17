@@ -38,6 +38,6 @@ export const auth = betterAuth({
             }
         })
     ],
-    trustedOrigins: [process.env.FRONTEND_URL as string],
+    trustedOrigins: JSON.parse(process.env.ALLOWED_ORIGINS || '[]'),
 });
 

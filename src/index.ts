@@ -14,10 +14,12 @@ import errorHandler from './middlewares/errorHandler';
 
 const app = express();
 
+const allowedOrigins = JSON.parse(process.env.ALLOWED_ORIGINS || '[]');
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true
   },
@@ -31,7 +33,7 @@ io.on('connection', (socket) => {
 });
 
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -39,9 +41,9 @@ app.use(cors({
 
 app.all("/api/auth/{*any}", toNodeHandler(auth));
 
-app.use(validateSession);
 app.use(express.json());
 app.use('/api/v1/rooms', roomRouter);
+app.use(validateSession);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/hobbies', hobbyRouter);
 
