@@ -22,9 +22,9 @@ export class ChatService {
     }
 
     public handleConnection(socket: Socket): void {
-        socket.on('getInitialRoomState', () => this.getInitialRoomState(socket));
-        socket.on('joinRoom', (room, username) => this.joinRoom(socket, room, username));
-        socket.on('leaveRoom', () => this.leaveRoom(socket));
+        socket.on('get-initial-room-state', () => this.getInitialRoomState(socket));
+        socket.on('join-room', (room, username) => this.joinRoom(socket, room, username));
+        socket.on('leave-room', () => this.leaveRoom(socket));
         socket.on('message', (message) => this.handleMessage(socket, message));
         socket.on('image', (data) => this.handleImage(socket, data));
         socket.on('disconnecting', () => this.handleDisconnect(socket));
@@ -37,7 +37,7 @@ export class ChatService {
                 { userCount: state.subRooms.reduce((acc, sr) => acc + sr.usercount, 0) }
             ])
         );
-        socket.emit('initialRoomState', state);
+        socket.emit('initial-room-state', state);
     }
 
     private async joinRoom(socket: Socket, parentRoom: string, username: string): Promise<void> {
@@ -66,7 +66,7 @@ export class ChatService {
         socket.data.subRoomName = targetSubRoom.name;
         socket.data.parentRoom = parentRoom;
 
-        socket.broadcast.to(targetSubRoom.name).emit('userJoined', {
+        socket.broadcast.to(targetSubRoom.name).emit('user-joined', {
             username: username,
             system: true,
             message: 'se ha unido a la sala.',
@@ -74,7 +74,7 @@ export class ChatService {
         });
 
         const totalUsers = roomState[parentRoom].subRooms.reduce((sum, sr) => sum + sr.usercount, 0);
-        this.io.emit('userCount', { roomId: parentRoom, count: totalUsers });
+        this.io.emit('user-count', { roomId: parentRoom, count: totalUsers });
     }
 
 
@@ -130,14 +130,14 @@ export class ChatService {
         if (subRoom) {
             subRoom.usercount--;
 
-            socket.to(subRoomName).emit('userLeft', `${username || 'Anónimo'} ha salido de la sala.`);
+            socket.to(subRoomName).emit('user-left', `${username || 'Anónimo'} ha salido de la sala.`);
 
             if (subRoom.usercount <= 0) {
                 roomData.subRooms = roomData.subRooms.filter(sr => sr.name !== subRoomName);
             }
 
             const totalUsers = roomData.subRooms.reduce((sum, sr) => sum + sr.usercount, 0);
-            this.io.emit('userCount', { roomId: parentRoom, count: totalUsers });
+            this.io.emit('user-count', { roomId: parentRoom, count: totalUsers });
         }
     }
 }
