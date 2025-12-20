@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
-import { roomExists } from '@/services/room.service';
-import { IChatAdapter } from '@/services/chat/adapters/base.adapter';
+import { roomExists } from '../room.service';
+import { IChatAdapter } from './adapters/base.adapter';
+import * as UserRepository from '../../repositories/user.repository';
 
 export class ChatService {
     private io: Server;
@@ -25,23 +26,33 @@ export class ChatService {
         socket.emit('initial-room-state', state);
     }
 
-    private async joinRoom(socket: Socket, parentRoom: string, username: string): Promise<void> {
+    private async joinRoom(socket: Socket, parentRoom: string, clientUsername: string): Promise<void> {
         if (!await roomExists(parentRoom)) {
             socket.emit('error', 'La sala no existe');
             return;
         }
 
         const { subRoomName, totalUsersInParentRoom } = await this.adapter.joinRoom(parentRoom);
-
         await socket.join(subRoomName);
 
-        // Store session data on the socket
-        socket.data.username = username;
+        let finalUsername = clientUsername;
+        let userProfileImage: string | null = null;
+
+        if (socket.data.user) {
+            // authenticated user
+            const sessionUser = socket.data.user;
+            finalUsername = sessionUser.name;
+            userProfileImage = await UserRepository.findImageById(sessionUser.id);
+        }
+
+        // save data in socket for later use
+        socket.data.username = finalUsername;
+        socket.data.userProfileImage = userProfileImage;
         socket.data.subRoomName = subRoomName;
         socket.data.parentRoom = parentRoom;
 
         socket.broadcast.to(subRoomName).emit('user-joined', {
-            username: username,
+            username: finalUsername,
             system: true,
             message: 'se ha unido a la sala.',
             timestamp: new Date().toISOString(),
@@ -59,28 +70,28 @@ export class ChatService {
     }
 
     private handleMessage(socket: Socket, message: string): void {
-        const room = socket.data.subRoomName;
-        const username = socket.data.username || 'Anónimo';
-        if (!room) {
+        const { subRoomName, username, userProfileImage } = socket.data;
+        if (!subRoomName) {
             socket.emit('error', 'No estás en una sala');
             return;
         }
-        this.io.to(room).emit('message', {
+        this.io.to(subRoomName).emit('message', {
             username,
+            userProfileImage,
             message,
             timestamp: new Date().toISOString(),
         });
     }
 
     private handleImage(socket: Socket, data: { image: Buffer; description?: string }): void {
-        const room = socket.data.subRoomName;
-        const username = socket.data.username || 'Anónimo';
-        if (!room) {
+        const { subRoomName, username, userProfileImage } = socket.data;
+        if (!subRoomName) {
             socket.emit('error', 'No estás en una sala');
             return;
         }
-        this.io.to(room).emit('image', {
+        this.io.to(subRoomName).emit('image', {
             username,
+            userProfileImage,
             image: data.image,
             description: data.description,
             timestamp: new Date().toISOString(),
@@ -89,7 +100,6 @@ export class ChatService {
 
     private async handleDisconnect(socket: Socket): Promise<void> {
         const { parentRoom, subRoomName, username } = socket.data;
-
         if (!parentRoom || !subRoomName) {
             return;
         }

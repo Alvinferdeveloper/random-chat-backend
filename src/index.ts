@@ -31,6 +31,28 @@ const io = new Server(server, {
     maxHttpBufferSize: 1e7,
 });
 
+io.use(async (socket, next) => {
+    const headers = new Headers();
+    Object.entries(socket.handshake.headers).forEach(([key, value]) => {
+        if (typeof value === "string") {
+            headers.append(key, value);
+        } else if (Array.isArray(value)) {
+            value.forEach((v) => headers.append(key, v));
+        }
+    });
+
+    try {
+        const session = await auth.api.getSession({ headers });
+        if (session && session.user) {
+            // Attach user to the socket for authenticated users
+            socket.data.user = session.user;
+        }
+    } catch (error) {
+        // Ignore error, proceed as unauthenticated
+    }
+    next();
+});
+
 // --- Adapter Switch ---
 let chatAdapter: IChatAdapter;
 

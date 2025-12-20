@@ -50,3 +50,21 @@ export async function updateUserProfile(userId: string, profileInfo: ProfileInfo
         throw new ApiError(500, 'Internal server errore.');
     }
 }
+
+/**
+ * Finds a user by their ID and returns their image URL.
+ * @param userId - The ID of the user to find.
+ * @returns The user's image URL or null if not found.
+ */
+export const findImageById = async (userId: string): Promise<string | null> => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { image: true },
+        });
+        return user?.image ?? null;
+    } catch (error) {
+        console.error(`Error fetching user image for userId ${userId}:`, error);
+        return null;
+    }
+};
