@@ -64,7 +64,48 @@ export const findImageById = async (userId: string): Promise<string | null> => {
         });
         return user?.image ?? null;
     } catch (error) {
+        // Log the error but don't crash the chat flow
         console.error(`Error fetching user image for userId ${userId}:`, error);
         return null;
+    }
+};
+
+/**
+ * Finds a user's full profile by their ID.
+ * @param userId - The ID of the user.
+ * @returns The user's profile data.
+ * @throws {ApiError} If the user is not found.
+ */
+export const findProfileById = async (userId: string) => {
+    try {
+        const userProfile = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                username: true,
+                email: true,
+                image: true,
+                bio: true,
+                location: true,
+                ageRange: true,
+                conversationType: true,
+                hobbies: {
+                    select: {
+                        id: true,
+                        name: true,
+                        icon: true,
+                    }
+                }
+            }
+        });
+
+        if (!userProfile) {
+            throw new ApiError(404, 'Perfil de usuario no encontrado.');
+        }
+        return userProfile;
+    } catch (error) {
+        console.log(error)
+        if (error instanceof ApiError) throw error;
+        console.error(`Error fetching user profile for userId ${userId}:`, error);
+        throw new ApiError(500, 'Error interno del servidor al obtener el perfil.');
     }
 };
