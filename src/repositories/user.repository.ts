@@ -71,6 +71,19 @@ export const findImageById = async (userId: string): Promise<string | null> => {
 };
 
 /**
+ * Finds a user by their username.
+ * @param username - The username to search for.
+ * @returns The user object or null if not found.
+ */
+export const findByUsername = async (username: string) => {
+    try {
+        return await prisma.user.findUnique({ where: { username } });
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Finds a user's full profile by their ID.
  * @param userId - The ID of the user.
  * @returns The user's profile data.
@@ -82,7 +95,7 @@ export const findProfileById = async (userId: string) => {
             where: { id: userId },
             select: {
                 username: true,
-                email: true,
+                email: true, // Included for completeness, might be removed on frontend
                 image: true,
                 bio: true,
                 location: true,
@@ -103,9 +116,39 @@ export const findProfileById = async (userId: string) => {
         }
         return userProfile;
     } catch (error) {
-        console.log(error)
         if (error instanceof ApiError) throw error;
         console.error(`Error fetching user profile for userId ${userId}:`, error);
         throw new ApiError(500, 'Error interno del servidor al obtener el perfil.');
     }
 };
+
+/**
+ * Updates a single attribute for a user's profile.
+ * @param userId - The ID of the user to update.
+ * @param field - The name of the field to update.
+ * @param value - The new value for the field.
+ */
+export const updateProfileAttribute = (userId: string, field: string, value: any) => {
+    try {
+        let data: any = {};
+
+        if (field === 'selected_hobbies') {
+            data.hobbies = {
+                set: (value as string[]).map(id => ({ id }))
+            };
+        } else {
+            data[field] = value;
+        }
+
+        return prisma.user.update({
+            where: { id: userId },
+            data,
+            include: {
+                hobbies: true
+            }
+        });
+    } catch (error) {
+        console.error(`Error updating [${field}] for userId ${userId}:`, error);
+        throw new ApiError(500, `No se pudo actualizar el campo ${field}.`);
+    }
+}

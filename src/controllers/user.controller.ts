@@ -5,7 +5,7 @@ import ApiError from '../utils/ApiError';
 export const completeUserProfile = async (req: Request, res: Response) => {
     const user = req.user;
     const profileData = req.body
-
+    console.log(profileData)
     await UserService.completeUserProfile(user?.id as string, profileData);
 
     res.status(200).json({ success: true, message: 'Perfil actualizado' });
@@ -24,11 +24,24 @@ export const getUserSession = async (req: Request, res: Response) => {
 
 export const getUserProfile = async (req: Request, res: Response) => {
     const user = req.user;
-
     if (!user) {
         throw new ApiError(401, 'Usuario no autenticado.');
     }
 
     const userProfile = await UserService.getUserProfile(user.id);
-    res.status(200).json({ success: true, data: userProfile });
+    res.status(200).json(userProfile);
+};
+
+export const updateUserProfile = async (req: Request, res: Response) => {
+    const user = req.user;
+    if (!user) {
+        throw new ApiError(401, 'Usuario no autenticado.');
+    }
+
+    const fieldToUpdate = Object.keys(req.body)[0];
+    const value = req.body[fieldToUpdate];
+
+    const updatedUser = await UserService.updateUserProfileAttribute(user.id, fieldToUpdate, value);
+
+    res.status(200).json({ success: true, user: updatedUser });
 };
