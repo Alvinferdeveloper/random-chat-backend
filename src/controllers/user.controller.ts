@@ -29,7 +29,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
     }
 
     const userProfile = await UserService.getUserProfile(user.id);
-    res.status(200).json(userProfile);
+    res.status(200).json({ success: true, user: userProfile });
 };
 
 export const updateUserProfile = async (req: Request, res: Response) => {

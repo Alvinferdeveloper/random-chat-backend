@@ -15,7 +15,7 @@ export const completeUserProfile = async (userId: string, profileInfo: ProfileIn
  */
 export const getUserProfile = async (userId: string) => {
     const userProfile = await UserRepository.findProfileById(userId);
-    return userProfile;
+    return { ...userProfile, profileImage: userProfile.image };
 };
 
 /**
@@ -39,5 +39,6 @@ export const updateUserProfileAttribute = async (userId: string, field: string, 
         }
     }
 
-    return UserRepository.updateProfileAttribute(userId, field, value);
+    const updatedUser = await UserRepository.updateProfileAttribute(userId, field, value);
+    return { ...updatedUser, profileImage: updatedUser.image };
 };
