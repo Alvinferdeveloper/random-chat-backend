@@ -45,3 +45,19 @@ export const updateUserProfile = async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true, user: updatedUser });
 };
+
+export const generateProfileUploadUrl = async (req: Request, res: Response) => {
+    const user = req.user;
+    if (!user) {
+        throw new ApiError(401, 'Usuario no autenticado.');
+    }
+
+    const { fileName } = req.body;
+
+    const { signedUploadUrl, publicUrl } = await UserService.generateProfileUploadUrl(
+        user.id,
+        fileName,
+    );
+
+    res.status(200).json({ signedUploadUrl, publicUrl });
+};

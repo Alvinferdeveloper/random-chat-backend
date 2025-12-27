@@ -2,6 +2,7 @@ import * as UserRepository from '../repositories/user.repository';
 import * as HobbyRepository from '../repositories/hobby.repository';
 import { ProfileInfo } from '@/types/user';
 import ApiError from '../utils/ApiError';
+import { supabase } from '@/lib/supabase';
 
 export const completeUserProfile = async (userId: string, profileInfo: ProfileInfo) => {
     const updatedUser = await UserRepository.updateUserProfile(userId, profileInfo);
@@ -14,8 +15,7 @@ export const completeUserProfile = async (userId: string, profileInfo: ProfileIn
  * @returns The user's profile data.
  */
 export const getUserProfile = async (userId: string) => {
-    const userProfile = await UserRepository.findProfileById(userId);
-    return { ...userProfile, profileImage: userProfile.image };
+    return UserRepository.findProfileById(userId);
 };
 
 /**
@@ -39,6 +39,42 @@ export const updateUserProfileAttribute = async (userId: string, field: string, 
         }
     }
 
-    const updatedUser = await UserRepository.updateProfileAttribute(userId, field, value);
-    return { ...updatedUser, profileImage: updatedUser.image };
+    return UserRepository.updateProfileAttribute(userId, field, value);
+
+};
+
+/**
+ * Generates a pre-signed URL for uploading a user's profile image to Supabase Storage.
+ * @param userId - The ID of the user.
+ * @param fileName - The desired file name for the image.
+ * @returns An object containing the signed upload URL and the public URL of the file.
+ * @throws {ApiError} If there is an error generating the signed URL.
+ */
+export const generateProfileUploadUrl = async (userId: string, fileName: string) => {
+    const bucketName = 'avatars';
+    const filePath = `${userId}/${fileName}`;
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .createSignedUploadUrl(filePath, {
+            upsert: true,
+        });
+
+    if (uploadError) {
+        console.error('Supabase createSignedUploadUrl error:', uploadError);
+        throw new ApiError(500, 'Error al generar la URL de subida pre-firmada.');
+    }
+
+    const { data: publicUrlData } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(filePath);
+
+    if (!publicUrlData) {
+        throw new ApiError(500, 'Error al obtener la URL pública de la imagen.');
+    }
+
+    return {
+        signedUploadUrl: uploadData.signedUrl,
+        publicUrl: publicUrlData.publicUrl,
+    };
 };
