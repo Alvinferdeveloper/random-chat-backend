@@ -1,7 +1,14 @@
 import { Server, Socket } from 'socket.io';
+import crypto from 'crypto';
 import { roomExists } from '../room.service';
 import { IChatAdapter } from './adapters/base.adapter';
 import * as UserRepository from '../../repositories/user.repository';
+
+interface ReplyContext {
+    id: string;
+    author: string;
+    messageSnippet: string;
+}
 
 export class ChatService {
     private io: Server;
@@ -16,8 +23,8 @@ export class ChatService {
         socket.on('get-initial-room-state', () => this.getInitialRoomState(socket));
         socket.on('join-room', (room, username) => this.joinRoom(socket, room, username));
         socket.on('leave-room', () => this.leaveRoom(socket));
-        socket.on('message', (message) => this.handleMessage(socket, message));
-        socket.on('image', (data) => this.handleImage(socket, data));
+        socket.on('message', (payload) => this.handleMessage(socket, payload));
+        socket.on('image', (payload) => this.handleImage(socket, payload));
         socket.on('disconnecting', () => this.handleDisconnect(socket));
     }
 
@@ -39,13 +46,11 @@ export class ChatService {
         let userProfileImage: string | null = null;
 
         if (socket.data.user) {
-            // authenticated user
             const sessionUser = socket.data.user;
             finalUsername = sessionUser.name;
             userProfileImage = await UserRepository.findImageById(sessionUser.id);
         }
 
-        // save data in socket for later use
         socket.data.username = finalUsername;
         socket.data.userProfileImage = userProfileImage;
         socket.data.subRoomName = subRoomName;
@@ -69,31 +74,41 @@ export class ChatService {
         }
     }
 
-    private handleMessage(socket: Socket, message: string): void {
+    private handleMessage(socket: Socket, payload: string | { message: string; replyTo?: ReplyContext }): void {
         const { subRoomName, username, userProfileImage } = socket.data;
         if (!subRoomName) {
             socket.emit('error', 'No estás en una sala');
             return;
         }
+
+        const isObjectPayload = typeof payload === 'object' && payload !== null;
+        const message = isObjectPayload ? payload.message : payload;
+        const replyTo = isObjectPayload ? payload.replyTo : null;
+
         this.io.to(subRoomName).emit('message', {
+            id: crypto.randomUUID(), // Assign temporary ID
             username,
             userProfileImage,
             message,
+            replyTo, // Include reply context
             timestamp: new Date().toISOString(),
         });
     }
 
-    private handleImage(socket: Socket, data: { image: Buffer; description?: string }): void {
+    private handleImage(socket: Socket, payload: { image: Buffer; description?: string; replyTo?: ReplyContext }): void {
         const { subRoomName, username, userProfileImage } = socket.data;
         if (!subRoomName) {
             socket.emit('error', 'No estás en una sala');
             return;
         }
+
         this.io.to(subRoomName).emit('image', {
+            id: crypto.randomUUID(),
             username,
             userProfileImage,
-            image: data.image,
-            description: data.description,
+            image: payload.image,
+            description: payload.description,
+            replyTo: payload.replyTo,
             timestamp: new Date().toISOString(),
         });
     }
