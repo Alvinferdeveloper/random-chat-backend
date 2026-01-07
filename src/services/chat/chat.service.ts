@@ -19,6 +19,25 @@ export class ChatService {
         this.adapter = adapter;
     }
 
+    /**
+     * Fetches all sockets in a room, maps them to a user list payload, 
+     * and broadcasts the list to that room.
+     * @param subRoomName - The name of the sub-room to broadcast to.
+     */
+    private async _broadcastUserList(subRoomName: string): Promise<void> {
+        try {
+            const sockets = await this.io.in(subRoomName).fetchSockets();
+            const userList = sockets.map(socket => ({
+                id: socket.id,
+                username: socket.data.username,
+                profileImage: socket.data.userProfileImage,
+            }));
+            this.io.to(subRoomName).emit('room_users', userList);
+        } catch (error) {
+            console.error(`Error broadcasting user list for room ${subRoomName}:`, error);
+        }
+    }
+
     public handleConnection(socket: Socket): void {
         socket.on('get-initial-room-state', () => this.getInitialRoomState(socket));
         socket.on('join-room', (room, username) => this.joinRoom(socket, room, username));
@@ -64,6 +83,9 @@ export class ChatService {
         });
 
         this.io.emit('user-count', { roomId: parentRoom, count: totalUsersInParentRoom });
+
+        // Broadcast the updated user list after the new user has joined
+        await this._broadcastUserList(subRoomName);
     }
 
     private async leaveRoom(socket: Socket): Promise<void> {
@@ -86,11 +108,11 @@ export class ChatService {
         const replyTo = isObjectPayload ? payload.replyTo : null;
 
         this.io.to(subRoomName).emit('message', {
-            id: crypto.randomUUID(), // Assign temporary ID
+            id: crypto.randomUUID(),
             username,
             userProfileImage,
             message,
-            replyTo, // Include reply context
+            replyTo,
             timestamp: new Date().toISOString(),
         });
     }
@@ -124,5 +146,8 @@ export class ChatService {
         socket.to(subRoomName).emit('user-left', `${username || 'Anónimo'} ha salido de la sala.`);
 
         this.io.emit('user-count', { roomId: parentRoom, count: totalUsersInParentRoom });
+
+        // Broadcast the updated user list after the user has left
+        await this._broadcastUserList(subRoomName);
     }
 }
