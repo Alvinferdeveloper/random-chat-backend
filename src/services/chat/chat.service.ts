@@ -44,6 +44,7 @@ export class ChatService {
         socket.on('leave-room', () => this.leaveRoom(socket));
         socket.on('message', (payload) => this.handleMessage(socket, payload));
         socket.on('image', (payload) => this.handleImage(socket, payload));
+        socket.on('send_reaction', (payload) => this.handleSendReaction(socket, payload));
         socket.on('disconnecting', () => this.handleDisconnect(socket));
     }
 
@@ -84,7 +85,6 @@ export class ChatService {
 
         this.io.emit('user-count', { roomId: parentRoom, count: totalUsersInParentRoom });
 
-        // Broadcast the updated user list after the new user has joined
         await this._broadcastUserList(subRoomName);
     }
 
@@ -113,6 +113,7 @@ export class ChatService {
             userProfileImage,
             message,
             replyTo,
+            reactions: [], // Initialize with empty reactions
             timestamp: new Date().toISOString(),
         });
     }
@@ -131,7 +132,24 @@ export class ChatService {
             image: payload.image,
             description: payload.description,
             replyTo: payload.replyTo,
+            reactions: [], // Initialize with empty reactions
             timestamp: new Date().toISOString(),
+        });
+    }
+
+    private handleSendReaction(socket: Socket, payload: { messageId: string; emoji: string }): void {
+        const { subRoomName, username } = socket.data;
+        if (!subRoomName) {
+            socket.emit('error', 'No estás en una sala para reaccionar.');
+            return;
+        }
+
+        // The server acts as a broker. It broadcasts the reaction attempt,
+        // and the client-side logic will handle the state update (toggling).
+        this.io.to(subRoomName).emit('reaction_update', {
+            messageId: payload.messageId,
+            emoji: payload.emoji,
+            reactingUsername: username,
         });
     }
 
@@ -147,7 +165,6 @@ export class ChatService {
 
         this.io.emit('user-count', { roomId: parentRoom, count: totalUsersInParentRoom });
 
-        // Broadcast the updated user list after the user has left
         await this._broadcastUserList(subRoomName);
     }
 }
