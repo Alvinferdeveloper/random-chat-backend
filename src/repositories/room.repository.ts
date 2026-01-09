@@ -18,14 +18,41 @@ export const findById = async (id: string): Promise<Room | null> => {
 };
 
 /**
- * Retrieves all rooms from the database.
- * @returns A promise that resolves to an array of all rooms.
+ * Retrieves a paginated list of rooms from the database.
+ * @param page - The page number to retrieve.
+ * @param limit - The number of items per page.
+ * @returns A promise that resolves to an object containing the room data and pagination metadata.
  * @throws {ApiError} If there is a database error.
  */
-export const findAll = async (): Promise<Room[]> => {
+export const findAllPaginated = async (page: number, limit: number) => {
     try {
-        const rooms = await prisma.room.findMany();
-        return rooms;
+        const skip = (page - 1) * limit;
+        const take = limit;
+
+        // Perform two queries in parallel: one for the data, one for the total count
+        const [rooms, totalItems] = await prisma.$transaction([
+            prisma.room.findMany({
+                skip: skip,
+                take: take,
+                orderBy: {
+                    created_at: 'desc' // Order by creation date, newest first
+                }
+            }),
+            prisma.room.count()
+        ]);
+        
+        const totalPages = Math.ceil(totalItems / limit);
+        const hasNextPage = page < totalPages;
+
+        return {
+            data: rooms,
+            pagination: {
+                currentPage: page,
+                totalPages: totalPages,
+                totalItems: totalItems,
+                hasNextPage: hasNextPage
+            }
+        };
     } catch (error) {
         throw new ApiError(500, 'No se pudieron obtener las salas de la base de datos.');
     }
