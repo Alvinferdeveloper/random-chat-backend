@@ -40,7 +40,7 @@ export const findAllPaginated = async (page: number, limit: number) => {
             }),
             prisma.room.count()
         ]);
-        
+
         const totalPages = Math.ceil(totalItems / limit);
         const hasNextPage = page < totalPages;
 
@@ -55,5 +55,62 @@ export const findAllPaginated = async (page: number, limit: number) => {
         };
     } catch (error) {
         throw new ApiError(500, 'No se pudieron obtener las salas de la base de datos.');
+    }
+};
+
+/**
+ * Checks if a room with the given normalized name exists.
+ * @param normalized_name - The normalized name of the room to check.
+ * @returns A promise that resolves to a boolean indicating whether the room exists.
+ */
+export const existsByNameNormalized = async (normalized_name: string): Promise<boolean> => {
+    const room = await prisma.room.findFirst({
+        where: {
+            normalized_name: {
+                equals: normalized_name
+            }
+        },
+        select: { id: true },
+    });
+
+    return !!room;
+};
+
+/**
+ * Creates a new room in the database.
+ * @param roomData - The data for the new room.
+ * @returns A promise that resolves to the newly created room.
+ */
+export const create = async (roomData: Omit<Room, 'id' | 'created_at'>): Promise<Room> => {
+    try {
+        const newRoom = await prisma.room.create({
+            data: {
+                ...roomData,
+                server_banner: '',
+                server_icon: ''
+            }
+        });
+        return newRoom;
+    } catch (error) {
+        // Could be a unique constraint violation if we add one on the name field
+        console.error('Error creating room:', error);
+        throw new ApiError(500, 'Error al crear la nueva sala.');
+    }
+};
+
+/**
+ * Updates a single attribute for a room.
+ * @param roomId - The ID of the room to update.
+ * @param field - The name of the field to update.
+ * @param value - The new value for the field.
+ */
+export const updateAttribute = async (roomId: string, field: string, value: any) => {
+    try {
+        await prisma.room.update({
+            where: { id: roomId },
+            data: { [field]: value },
+        });
+    } catch (error) {
+        throw new ApiError(500, `No se pudo actualizar el campo ${field} de la sala.`);
     }
 };

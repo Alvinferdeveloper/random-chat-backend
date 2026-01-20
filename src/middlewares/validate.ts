@@ -16,8 +16,8 @@ export const validate = (schema: ZodObject) => (req: Request, res: Response, nex
         next();
     } catch (error) {
         if (error instanceof ZodError) {
-            const errorMessage = error.issues.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
-            throw new ApiError(400, `Error de validación: ${errorMessage}`);
+            const errorMessage = error.issues.map(err => `${err.message}`).join(', ');
+            throw new ApiError(400, `${errorMessage}`);
         }
         next(error);
     }

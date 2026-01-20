@@ -14,8 +14,8 @@ import errorHandler from '@/middlewares/errorHandler';
 import { RedisAdapter } from '@/services/chat/adapters/redis.adapter';
 import { InMemoryAdapter } from '@/services/chat/adapters/in-memory.adapter';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { Redis } from 'ioredis';
 import { IChatAdapter } from '@/services/chat/adapters/base.adapter';
+import { getRedisClient } from '@/lib/redis';
 
 const app = express();
 
@@ -57,7 +57,7 @@ io.use(async (socket, next) => {
 let chatAdapter: IChatAdapter;
 
 if (process.env.CHAT_ADAPTER === 'redis') {
-    const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+    const redisClient = getRedisClient();
     const pubClient = redisClient.duplicate();
     const subClient = redisClient.duplicate();
 
