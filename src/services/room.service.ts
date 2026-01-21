@@ -72,6 +72,7 @@ export const createRoom = async (roomData: Omit<Room, 'id' | 'created_at'>, user
 
     const newRoom = await RoomRepository.create({
         ...roomData,
+        ownerId: userId,
         normalized_name: newRoomNormalized
     });
 
@@ -91,9 +92,18 @@ export const createRoom = async (roomData: Omit<Room, 'id' | 'created_at'>, user
  * @param roomId - The ID of the room.
  * @param type - The type of image ('banner' or 'icon').
  * @param contentType - The content type of the image.
+ * @param userId - The ID of the user requesting the URL, for permission check.
  * @returns An object containing the signed upload URL and the public URL.
  */
-export const generateRoomUploadUrl = async (roomId: string, type: 'banner' | 'icon', contentType: string) => {
+export const generateRoomUploadUrl = async (roomId: string, type: 'banner' | 'icon', contentType: string, userId: string) => {
+    const room = await RoomRepository.findById(roomId);
+    if (!room) {
+        throw new ApiError(404, 'La sala no existe.');
+    }
+    if (room.ownerId !== userId) {
+        throw new ApiError(403, 'No tienes permiso para editar esta sala.');
+    }
+
     const bucketName = 'rooms-assets';
     const fileExtension = contentType.split('/')[1] || 'jpg';
     const filePath = `${roomId}/${type}.${fileExtension}`;
@@ -128,7 +138,16 @@ export const generateRoomUploadUrl = async (roomId: string, type: 'banner' | 'ic
  * @param roomId - The ID of the room.
  * @param field - The name of the field to update.
  * @param value - The new value.
+ * @param userId - The ID of the user requesting the update, for permission check.
  */
-export const updateRoomAttribute = async (roomId: string, field: string, value: any) => {
+export const updateRoomAttribute = async (roomId: string, field: string, value: any, userId: string) => {
+    const room = await RoomRepository.findById(roomId);
+    if (!room) {
+        throw new ApiError(404, 'La sala no existe.');
+    }
+    if (room.ownerId !== userId) {
+        throw new ApiError(403, 'No tienes permiso para editar esta sala.');
+    }
+
     await RoomRepository.updateAttribute(roomId, field, value);
 };

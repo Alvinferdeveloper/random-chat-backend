@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,12 +10,15 @@ datasource db {
 model Room {
   id                String    @id @default(uuid()) @db.Char(36)
   name              String    @db.VarChar(45)
-  normalized_name   String    @db.VarChar(60) @default("")
+  normalized_name   String    @unique @db.VarChar(60) @default("")
   short_description String    @db.VarChar(45)
   full_description  String    @db.VarChar(300)
   server_banner     String    @db.VarChar(200)
   server_icon       String    @db.VarChar(200)
   created_at        DateTime? @default(now()) @db.DateTime(0)
+
+  ownerId   String?    @db.Char(36)
+  owner     User?      @relation("OwnedRooms", fields: [ownerId], references: [id], onDelete: Cascade)
 }
 
 model User {
@@ -35,6 +37,7 @@ model User {
   sessions           Session[]
   accounts           Account[]
   hobbies            Hobby[]            
+  ownedRooms         Room[]             @relation("OwnedRooms")
 
   @@unique([email])
   @@map("user")
