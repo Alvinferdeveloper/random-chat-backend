@@ -8,11 +8,16 @@ import ApiError from '../utils/ApiError';
  */
 export const validate = (schema: ZodObject) => (req: Request, res: Response, next: NextFunction) => {
     try {
-        schema.parse({
+        const validatedData = schema.parse({
             body: req.body,
             query: req.query,
             params: req.params,
         });
+
+        req.body = validatedData.body;
+        req.query = validatedData.query as any;
+        req.params = validatedData.params as any;
+
         next();
     } catch (error) {
         if (error instanceof ZodError) {
