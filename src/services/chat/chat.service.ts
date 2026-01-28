@@ -45,6 +45,8 @@ export class ChatService {
         socket.on('message', (payload) => this.handleMessage(socket, payload));
         socket.on('image', (payload) => this.handleImage(socket, payload));
         socket.on('send_reaction', (payload) => this.handleSendReaction(socket, payload));
+        socket.on('start-typing', () => this.handleStartTyping(socket));
+        socket.on('stop-typing', () => this.handleStopTyping(socket));
         socket.on('disconnecting', () => this.handleDisconnect(socket));
     }
 
@@ -113,9 +115,11 @@ export class ChatService {
             userProfileImage,
             message,
             replyTo,
-            reactions: [], // Initialize with empty reactions
+            reactions: [],
             timestamp: new Date().toISOString(),
         });
+        // After sending a message, a user is no longer typing
+        this.handleStopTyping(socket);
     }
 
     private handleImage(socket: Socket, payload: { image: Buffer; description?: string; replyTo?: ReplyContext }): void {
@@ -132,9 +136,11 @@ export class ChatService {
             image: payload.image,
             description: payload.description,
             replyTo: payload.replyTo,
-            reactions: [], // Initialize with empty reactions
+            reactions: [],
             timestamp: new Date().toISOString(),
         });
+        // After sending an image, a user is no longer typing
+        this.handleStopTyping(socket);
     }
 
     private handleSendReaction(socket: Socket, payload: { messageId: string; emoji: string }): void {
@@ -144,8 +150,6 @@ export class ChatService {
             return;
         }
 
-        // The server acts as a broker. It broadcasts the reaction attempt,
-        // and the client-side logic will handle the state update (toggling).
         this.io.to(subRoomName).emit('reaction_update', {
             messageId: payload.messageId,
             emoji: payload.emoji,
@@ -153,11 +157,29 @@ export class ChatService {
         });
     }
 
+    // New methods for typing indicators
+    private handleStartTyping(socket: Socket): void {
+        const { subRoomName, username } = socket.data;
+        if (!subRoomName || !username) return;
+
+        socket.broadcast.to(subRoomName).emit('user-started-typing', { username });
+    }
+
+    private handleStopTyping(socket: Socket): void {
+        const { subRoomName, username } = socket.data;
+        if (!subRoomName || !username) return;
+
+        socket.broadcast.to(subRoomName).emit('user-stopped-typing', { username });
+    }
+
     private async handleDisconnect(socket: Socket): Promise<void> {
         const { parentRoom, subRoomName, username } = socket.data;
         if (!parentRoom || !subRoomName) {
             return;
         }
+
+        // Clean up typing status before disconnecting
+        this.handleStopTyping(socket);
 
         const { totalUsersInParentRoom } = await this.adapter.leaveRoom(parentRoom, subRoomName);
 
