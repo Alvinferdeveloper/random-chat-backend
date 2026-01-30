@@ -3,6 +3,8 @@ import crypto from 'crypto';
 import { roomExists } from '../room.service';
 import { IChatAdapter } from './adapters/base.adapter';
 import * as UserRepository from '../../repositories/user.repository';
+import { supabase } from '@/lib/supabase'; // Import Supabase client
+import ApiError from '@/utils/ApiError';
 
 interface ReplyContext {
     id: string;
@@ -20,7 +22,7 @@ export class ChatService {
     }
 
     /**
-     * Fetches all sockets in a room, maps them to a user list payload, 
+     * Fetches all sockets in a room, maps them to a user list payload,
      * and broadcasts the list to that room.
      * @param subRoomName - The name of the sub-room to broadcast to.
      */
@@ -43,7 +45,10 @@ export class ChatService {
         socket.on('join-room', (room, username) => this.joinRoom(socket, room, username));
         socket.on('leave-room', () => this.leaveRoom(socket));
         socket.on('message', (payload) => this.handleMessage(socket, payload));
+
+        socket.on('request-chat-image-upload', (payload) => this.handleRequestChatImageUpload(socket, payload));
         socket.on('image', (payload) => this.handleImage(socket, payload));
+
         socket.on('send_reaction', (payload) => this.handleSendReaction(socket, payload));
         socket.on('start-typing', () => this.handleStartTyping(socket));
         socket.on('stop-typing', () => this.handleStopTyping(socket));
@@ -118,11 +123,39 @@ export class ChatService {
             reactions: [],
             timestamp: new Date().toISOString(),
         });
-        // After sending a message, a user is no longer typing
         this.handleStopTyping(socket);
     }
 
-    private handleImage(socket: Socket, payload: { image: Buffer; description?: string; replyTo?: ReplyContext }): void {
+    private async handleRequestChatImageUpload(socket: Socket, payload: { contentType: string, tempId: string }) {
+        const { subRoomName, user } = socket.data;
+        if (!subRoomName) return socket.emit('error', 'No estás en una sala para enviar imágenes.');
+
+        try {
+            const bucketName = 'chat-images';
+            const fileExtension = payload.contentType.split('/')[1] || 'jpg';
+            const userId = user ? user.id : 'anonymous';
+            const filePath = `${subRoomName}/${userId}-${Date.now()}.${fileExtension}`;
+
+            const { data, error } = await supabase.storage
+                .from(bucketName)
+                .createSignedUploadUrl(filePath, { upsert: false });
+
+            if (error) throw new ApiError(500, 'Error al generar la URL de subida pre-firmada.');
+
+            const { data: publicUrlData } = supabase.storage.from(bucketName).getPublicUrl(filePath);
+
+            socket.emit('grant-chat-image-upload', {
+                tempId: payload.tempId,
+                signedUploadUrl: data.signedUrl,
+                publicUrl: publicUrlData.publicUrl,
+            });
+        } catch (error) {
+            console.error('Error handling request for chat image upload:', error);
+            socket.emit('error', 'No se pudo procesar la subida de la imagen.');
+        }
+    }
+
+    private handleImage(socket: Socket, payload: { imageUrl: string; description?: string; replyTo?: ReplyContext }): void {
         const { subRoomName, username, userProfileImage } = socket.data;
         if (!subRoomName) {
             socket.emit('error', 'No estás en una sala');
@@ -133,22 +166,18 @@ export class ChatService {
             id: crypto.randomUUID(),
             username,
             userProfileImage,
-            image: payload.image,
+            imageUrl: payload.imageUrl,
             description: payload.description,
             replyTo: payload.replyTo,
             reactions: [],
             timestamp: new Date().toISOString(),
         });
-        // After sending an image, a user is no longer typing
         this.handleStopTyping(socket);
     }
 
     private handleSendReaction(socket: Socket, payload: { messageId: string; emoji: string }): void {
         const { subRoomName, username } = socket.data;
-        if (!subRoomName) {
-            socket.emit('error', 'No estás en una sala para reaccionar.');
-            return;
-        }
+        if (!subRoomName) return;
 
         this.io.to(subRoomName).emit('reaction_update', {
             messageId: payload.messageId,
@@ -157,7 +186,6 @@ export class ChatService {
         });
     }
 
-    // New methods for typing indicators
     private handleStartTyping(socket: Socket): void {
         const { subRoomName, username } = socket.data;
         if (!subRoomName || !username) return;
@@ -174,19 +202,12 @@ export class ChatService {
 
     private async handleDisconnect(socket: Socket): Promise<void> {
         const { parentRoom, subRoomName, username } = socket.data;
-        if (!parentRoom || !subRoomName) {
-            return;
-        }
+        if (!parentRoom || !subRoomName) return;
 
-        // Clean up typing status before disconnecting
         this.handleStopTyping(socket);
-
         const { totalUsersInParentRoom } = await this.adapter.leaveRoom(parentRoom, subRoomName);
-
         socket.to(subRoomName).emit('user-left', `${username || 'Anónimo'} ha salido de la sala.`);
-
         this.io.emit('user-count', { roomId: parentRoom, count: totalUsersInParentRoom });
-
         await this._broadcastUserList(subRoomName);
     }
 }
