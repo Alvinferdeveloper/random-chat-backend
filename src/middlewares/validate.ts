@@ -15,8 +15,8 @@ export const validate = (schema: ZodObject) => (req: Request, res: Response, nex
         });
 
         req.body = validatedData.body;
-        req.query = validatedData.query as any;
-        req.params = validatedData.params as any;
+        Object.assign(req.query, validatedData.query);
+        Object.assign(req.params, validatedData.params);
 
         next();
     } catch (error) {

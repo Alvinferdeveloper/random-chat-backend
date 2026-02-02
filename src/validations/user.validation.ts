@@ -7,6 +7,10 @@ export const completeUserProfileSchema = z.object({
         }).min(3, 'El nombre de usuario debe tener al menos 3 caracteres.'),
 
         bio: z.string().optional(),
+        age_range: z.string().optional(),
+        location: z.string().optional(),
+        conversation_type: z.string().optional(),
+        hobbies: z.array(z.string(), { error: 'Los hobbies deben ser un array de IDs.' }).optional(),
     }),
 });
 
