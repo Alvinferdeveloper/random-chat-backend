@@ -1,8 +1,14 @@
 import prisma from '../src/lib/prisma';
 
 const hobbies = [
-    'Música', 'Fotografía', 'Lectura', 'Videojuegos',
-    'Arte', 'Viajes', 'Café', 'Fitness'
+    { name: 'Música', icon: '🎵' },
+    { name: 'Fotografía', icon: '📷' },
+    { name: 'Lectura', icon: '📚' },
+    { name: 'Videojuegos', icon: '🎮' },
+    { name: 'Arte', icon: '🎨' },
+    { name: 'Viajes', icon: '✈️' },
+    { name: 'Café', icon: '☕' },
+    { name: 'Fitness', icon: '💪' }
 ];
 
 const defaultRooms = [
@@ -93,11 +99,11 @@ async function main() {
 
     // Seed de hobbies
     console.log('📚 Creando hobbies...');
-    for (const name of hobbies) {
+    for (const hobby of hobbies) {
         await prisma.hobby.upsert({
-            where: { name },
-            update: {},
-            create: { name },
+            where: { name: hobby.name },
+            update: { icon: hobby.icon },
+            create: { name: hobby.name, icon: hobby.icon },
         });
     }
     console.log(`✅ ${hobbies.length} hobbies creados\n`);
