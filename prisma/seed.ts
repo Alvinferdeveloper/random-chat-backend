@@ -114,6 +114,7 @@ async function main() {
         await prisma.room.upsert({
             where: { normalized_name: room.normalized_name },
             update: {
+                verified: true,
                 name: room.name,
                 short_description: room.short_description,
                 full_description: room.full_description,
