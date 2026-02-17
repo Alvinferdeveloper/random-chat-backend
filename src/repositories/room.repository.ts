@@ -3,14 +3,19 @@ import ApiError from '../utils/ApiError';
 import { Room } from '@prisma/client';
 
 /**
- * Finds a room by its unique ID.
+ * Finds a room by its unique ID, ensuring it's not logically deleted.
  * @param id - The ID of the room.
  * @returns A promise that resolves to the room object or null if not found.
- * @throws {ApiError} If there is a database error.
+ * @throws ApiError if an error occurs during the search.
  */
 export const findById = async (id: string): Promise<Room | null> => {
     try {
-        const room = await prisma.room.findUnique({ where: { id } });
+        const room = await prisma.room.findFirst({
+            where: {
+                id,
+                deletedAt: null
+            }
+        });
         return room;
     } catch (error) {
         throw new ApiError(500, `Error al buscar la sala con id ${id}.`);
@@ -18,39 +23,43 @@ export const findById = async (id: string): Promise<Room | null> => {
 };
 
 /**
- * Retrieves a paginated list of rooms from the database.
- * @param page - The page number to retrieve.
- * @param limit - The number of items per page.
- * @returns A promise that resolves to an object containing the room data and pagination metadata.
- * @throws {ApiError} If there is a database error.
+ * Retrieves a paginated list of rooms, excluding deleted and optionally unaccepted ones.
+ * @param page - The page number.
+ * @param limit - The items per page.
+ * @param includeUnaccepted - Whether to include rooms that haven't been accepted yet.
+ * @returns Paginated room data.
+ * @throws ApiError if an error occurs during the search.
  */
-export const findAllPaginated = async (page: number, limit: number) => {
+export const findAllPaginated = async (page: number, limit: number, includeUnaccepted: boolean = false) => {
     try {
         const skip = (page - 1) * limit;
         const take = limit;
 
-        // Perform two queries in parallel: one for the data, one for the total count
+        const whereCondition: any = {
+            deletedAt: null
+        };
+
+        if (!includeUnaccepted) {
+            whereCondition.accepted = true;
+        }
+
         const [rooms, totalItems] = await prisma.$transaction([
             prisma.room.findMany({
+                where: whereCondition,
                 skip: skip,
                 take: take,
-                orderBy: {
-                    created_at: 'desc' // Order by creation date, newest first
-                }
+                orderBy: { created_at: 'desc' }
             }),
-            prisma.room.count()
+            prisma.room.count({ where: whereCondition })
         ]);
-
-        const totalPages = Math.ceil(totalItems / limit);
-        const hasNextPage = page < totalPages;
 
         return {
             data: rooms,
             pagination: {
                 currentPage: page,
-                totalPages: totalPages,
+                totalPages: Math.ceil(totalItems / limit),
                 totalItems: totalItems,
-                hasNextPage: hasNextPage
+                hasNextPage: page < Math.ceil(totalItems / limit)
             }
         };
     } catch (error) {
@@ -59,29 +68,27 @@ export const findAllPaginated = async (page: number, limit: number) => {
 };
 
 /**
- * Checks if a room with the given normalized name exists.
- * @param normalized_name - The normalized name of the room to check.
- * @returns A promise that resolves to a boolean indicating whether the room exists.
+ * Checks if a non-deleted room with the given normalized name exists.
+ * @param normalized_name - The normalized name.
+ * @returns True if exists, false otherwise.
  */
 export const existsByNameNormalized = async (normalized_name: string): Promise<boolean> => {
     const room = await prisma.room.findFirst({
         where: {
-            normalized_name: {
-                equals: normalized_name
-            }
+            normalized_name: { equals: normalized_name },
+            deletedAt: null
         },
         select: { id: true },
     });
-
     return !!room;
 };
 
 /**
- * Creates a new room in the database.
- * @param roomData - The data for the new room.
- * @returns A promise that resolves to the newly created room.
+ * Creates a new room.
+ * @param roomData - Data for the new room.
+ * @throws ApiError if an error occurs during the creation.
  */
-export const create = async (roomData: Omit<Room, 'id' | 'created_at'>): Promise<Room> => {
+export const create = async (roomData: Omit<Room, 'id' | 'created_at' | 'deletedAt'>): Promise<Room> => {
     try {
         const newRoom = await prisma.room.create({
             data: {
@@ -92,7 +99,6 @@ export const create = async (roomData: Omit<Room, 'id' | 'created_at'>): Promise
         });
         return newRoom;
     } catch (error) {
-        // Could be a unique constraint violation if we add one on the name field
         console.error('Error creating room:', error);
         throw new ApiError(500, 'Error al crear la nueva sala.');
     }
@@ -101,8 +107,9 @@ export const create = async (roomData: Omit<Room, 'id' | 'created_at'>): Promise
 /**
  * Updates a single attribute for a room.
  * @param roomId - The ID of the room to update.
- * @param field - The name of the field to update.
+ * @param field - The field to update.
  * @param value - The new value for the field.
+ * @throws ApiError if an error occurs during the update.
  */
 export const updateAttribute = async (roomId: string, field: string, value: any) => {
     try {
@@ -112,5 +119,21 @@ export const updateAttribute = async (roomId: string, field: string, value: any)
         });
     } catch (error) {
         throw new ApiError(500, `No se pudo actualizar el campo ${field} de la sala.`);
+    }
+};
+
+/**
+ * Performs a soft delete on a room by setting its deletedAt field.
+ * @param roomId - The ID of the room to delete.
+ * @throws ApiError if an error occurs during the deletion.
+ */
+export const softDelete = async (roomId: string) => {
+    try {
+        await prisma.room.update({
+            where: { id: roomId },
+            data: { deletedAt: new Date() }
+        });
+    } catch (error) {
+        throw new ApiError(500, 'No se pudo realizar el borrado lógico de la sala.');
     }
 };
