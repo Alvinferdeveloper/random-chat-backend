@@ -26,11 +26,11 @@ export const findById = async (id: string): Promise<Room | null> => {
  * Retrieves a paginated list of rooms, excluding deleted and optionally unaccepted ones.
  * @param page - The page number.
  * @param limit - The items per page.
- * @param includeUnaccepted - Whether to include rooms that haven't been accepted yet.
+ * @param includeAllStatuses - Whether to include rooms that are not in ACCEPTED status.
  * @returns Paginated room data.
  * @throws ApiError if an error occurs during the search.
  */
-export const findAllPaginated = async (page: number, limit: number, includeUnaccepted: boolean = false) => {
+export const findAllPaginated = async (page: number, limit: number, includeAllStatuses: boolean = false) => {
     try {
         const skip = (page - 1) * limit;
         const take = limit;
@@ -39,8 +39,8 @@ export const findAllPaginated = async (page: number, limit: number, includeUnacc
             deletedAt: null
         };
 
-        if (!includeUnaccepted) {
-            whereCondition.accepted = true;
+        if (!includeAllStatuses) {
+            whereCondition.status = 'ACCEPTED';
         }
 
         const [rooms, totalItems] = await prisma.$transaction([

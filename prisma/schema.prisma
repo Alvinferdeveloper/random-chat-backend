@@ -17,11 +17,17 @@ model Room {
   server_icon       String    @db.VarChar(200)
   created_at        DateTime? @default(now()) @db.DateTime(0)
   verified          Boolean   @default(false)
-  accepted          Boolean   @default(true) 
+  status            RoomStatus @default(IN_REVISION)
   deletedAt         DateTime?
 
   ownerId   String?    @db.Char(36)
   owner     User?      @relation("OwnedRooms", fields: [ownerId], references: [id], onDelete: Cascade)
+}
+
+enum RoomStatus {
+  IN_REVISION
+  ACCEPTED
+  REJECTED
 }
 
 model User {
