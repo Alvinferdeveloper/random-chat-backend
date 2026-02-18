@@ -137,3 +137,23 @@ export const softDelete = async (roomId: string) => {
         throw new ApiError(500, 'No se pudo realizar el borrado lógico de la sala.');
     }
 };
+
+/**
+ * Retrieves all non-deleted rooms belonging to a specific owner.
+ * @param ownerId - The ID of the owner user.
+ * @returns A promise that resolves to an array of room objects.
+ */
+export const findByOwnerId = async (ownerId: string): Promise<Room[]> => {
+    try {
+        const rooms = await prisma.room.findMany({
+            where: {
+                ownerId,
+                deletedAt: null
+            },
+            orderBy: { created_at: 'desc' }
+        });
+        return rooms;
+    } catch (error) {
+        throw new ApiError(500, 'Error al obtener las salas del usuario.');
+    }
+};

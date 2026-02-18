@@ -59,3 +59,13 @@ export const updateRoom = async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true, message: `Sala actualizada.` });
 };
+
+export const getUserRooms = async (req: Request, res: Response) => {
+    const user = req.user;
+    if (!user || !user.id) {
+        throw new ApiError(401, 'Usuario no autenticado.');
+    }
+
+    const rooms = await RoomService.getUserRooms(user.id);
+    res.status(200).json({ success: true, data: rooms });
+};

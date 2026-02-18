@@ -151,3 +151,12 @@ export const updateRoomAttribute = async (roomId: string, field: string, value: 
 
     await RoomRepository.updateAttribute(roomId, field, value);
 };
+
+/**
+ * Retrieves all rooms created by a specific user.
+ * @param userId - The ID of the user.
+ * @returns A promise that resolves to an array of rooms.
+ */
+export const getUserRooms = async (userId: string) => {
+    return RoomRepository.findByOwnerId(userId);
+};
