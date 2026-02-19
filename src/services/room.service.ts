@@ -28,8 +28,9 @@ export const roomExists = async (id: string) => {
  * @param limit - The number of items per page.
  * @returns The paginated room data.
  */
-export const getAllRooms = async (page: number, limit: number) => {
-    const paginatedRooms = await RoomRepository.findAllPaginated(page, limit);
+export const getAllRooms = async (page: number, limit: number, search?: string) => {
+    const normalizedSearch = search ? normalizeString(search) : undefined;
+    const paginatedRooms = await RoomRepository.findAllPaginated(page, limit, false, normalizedSearch);
     return paginatedRooms;
 };
 

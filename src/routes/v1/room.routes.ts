@@ -2,12 +2,12 @@ import { Router } from "express";
 import { getRooms, createRoom, generateRoomUploadUrl, updateRoom, getUserRooms } from "../../controllers/room.controller";
 import { asyncHandler } from '../../utils/asyncHandler';
 import { validate } from '../../middlewares/validate';
-import { createRoomSchema, generateRoomUploadUrlSchema, updateRoomSchema } from '../../validations/room.validation';
+import { getRoomsSchema, createRoomSchema, generateRoomUploadUrlSchema, updateRoomSchema } from '../../validations/room.validation';
 import validateSession from "../../middlewares/validateSession";
 
 const router = Router();
 
-router.get('/', asyncHandler(getRooms));
+router.get('/', validate(getRoomsSchema), asyncHandler(getRooms));
 
 // Protected route to get rooms owned by the user
 router.get('/my-rooms', validateSession, asyncHandler(getUserRooms));

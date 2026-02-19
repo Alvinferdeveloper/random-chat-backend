@@ -30,7 +30,12 @@ export const findById = async (id: string): Promise<Room | null> => {
  * @returns Paginated room data.
  * @throws ApiError if an error occurs during the search.
  */
-export const findAllPaginated = async (page: number, limit: number, includeAllStatuses: boolean = false) => {
+export const findAllPaginated = async (
+    page: number,
+    limit: number,
+    includeAllStatuses: boolean = false,
+    search?: string
+) => {
     try {
         const skip = (page - 1) * limit;
         const take = limit;
@@ -41,6 +46,10 @@ export const findAllPaginated = async (page: number, limit: number, includeAllSt
 
         if (!includeAllStatuses) {
             whereCondition.status = 'ACCEPTED';
+        }
+
+        if (search) {
+            whereCondition.normalized_name = { contains: search };
         }
 
         const [rooms, totalItems] = await prisma.$transaction([

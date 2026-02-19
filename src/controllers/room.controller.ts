@@ -5,12 +5,13 @@ import ApiError from '../utils/ApiError';
 export const getRooms = async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const search = req.query.q as string | undefined;
 
     if (page < 1 || limit < 1) {
         return res.status(400).json({ success: false, message: 'Los parámetros de paginación deben ser números positivos.' });
     }
 
-    const paginatedData = await RoomService.getAllRooms(page, limit);
+    const paginatedData = await RoomService.getAllRooms(page, limit, search);
     res.status(200).json(paginatedData);
 };
 

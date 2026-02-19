@@ -1,5 +1,16 @@
 import { z } from 'zod';
 
+export const getRoomsSchema = z.object({
+    query: z.object({
+        q: z.string()
+            .min(1, 'El término de búsqueda no puede estar vacío.')
+            .max(100, 'El término de búsqueda no puede exceder los 100 caracteres.')
+            .optional(),
+        page: z.coerce.number().int().positive().optional(),
+        limit: z.coerce.number().int().positive().optional(),
+    }),
+});
+
 export const createRoomSchema = z.object({
     body: z.object({
         name: z.string()
