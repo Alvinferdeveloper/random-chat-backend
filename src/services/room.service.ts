@@ -26,11 +26,16 @@ export const roomExists = async (id: string) => {
  * Retrieves a paginated list of all rooms.
  * @param page - The page number.
  * @param limit - The number of items per page.
+ * @param search - Optional search string.
+ * @param userId - Optional ID of the current user to include favorite status.
  * @returns The paginated room data.
  */
-export const getAllRooms = async (page: number, limit: number, search?: string) => {
+export const getAllRooms = async (page: number, limit: number, search?: string, userId?: string) => {
     const normalizedSearch = search ? normalizeString(search) : undefined;
-    const paginatedRooms = await RoomRepository.findAllPaginated(page, limit, false, normalizedSearch);
+    const paginatedRooms = await RoomRepository.findAllPaginated(page, limit, {
+        search: normalizedSearch,
+        userId
+    });
     return paginatedRooms;
 };
 
@@ -160,4 +165,22 @@ export const updateRoomAttribute = async (roomId: string, field: string, value: 
  */
 export const getUserRooms = async (userId: string) => {
     return RoomRepository.findByOwnerId(userId);
+};
+
+/**
+ * Toggles a room as favorite for a user.
+ * @param userId - The ID of the user.
+ * @param roomId - The ID of the room.
+ * @returns The new favorite status.
+ */
+export const toggleFavoriteRoom = async (userId: string, roomId: string) => {
+    return RoomRepository.toggleFavorite(userId, roomId);
+};
+
+/**
+ * Retrieves all favorite rooms for a user.
+ * @param userId - The ID of the user.
+ */
+export const getUserFavoriteRooms = async (userId: string) => {
+    return RoomRepository.findFavoritesByUserId(userId);
 };

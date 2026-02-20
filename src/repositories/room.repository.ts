@@ -26,15 +26,14 @@ export const findById = async (id: string): Promise<Room | null> => {
  * Retrieves a paginated list of rooms, excluding deleted and optionally unaccepted ones.
  * @param page - The page number.
  * @param limit - The items per page.
- * @param includeAllStatuses - Whether to include rooms that are not in ACCEPTED status.
+ * @param options - Optional filters including search string and current user ID for favorite status.
  * @returns Paginated room data.
  * @throws ApiError if an error occurs during the search.
  */
 export const findAllPaginated = async (
     page: number,
     limit: number,
-    includeAllStatuses: boolean = false,
-    search?: string
+    options: { includeAllStatuses?: boolean, search?: string, userId?: string } = {}
 ) => {
     try {
         const skip = (page - 1) * limit;
@@ -44,26 +43,40 @@ export const findAllPaginated = async (
             deletedAt: null
         };
 
-        if (!includeAllStatuses) {
+        if (!options.includeAllStatuses) {
             whereCondition.status = 'ACCEPTED';
         }
 
-        if (search) {
-            whereCondition.normalized_name = { contains: search };
+        if (options.search) {
+            whereCondition.normalized_name = { contains: options.search };
         }
-
         const [rooms, totalItems] = await prisma.$transaction([
             prisma.room.findMany({
                 where: whereCondition,
                 skip: skip,
                 take: take,
-                orderBy: { created_at: 'desc' }
+                orderBy: { created_at: 'desc' },
+                include: options.userId ? {
+                    favoritedBy: {
+                        where: { userId: options.userId },
+                        select: { userId: true }
+                    }
+                } : undefined
             }),
             prisma.room.count({ where: whereCondition })
         ]);
 
+        // Map rooms to include a simple 'isFavorite' boolean
+        const data = rooms.map(room => {
+            const { favoritedBy, ...roomData } = room as any;
+            return {
+                ...roomData,
+                isFavorite: options.userId ? favoritedBy.length > 0 : false
+            };
+        });
+
         return {
-            data: rooms,
+            data,
             pagination: {
                 currentPage: page,
                 totalPages: Math.ceil(totalItems / limit),
@@ -164,5 +177,51 @@ export const findByOwnerId = async (ownerId: string): Promise<Room[]> => {
         return rooms;
     } catch (error) {
         throw new ApiError(500, 'Error al obtener las salas del usuario.');
+    }
+};
+
+/**
+ * Toggles the favorite status of a room for a user.
+ * @param userId - The ID of the user.
+ * @param roomId - The ID of the room.
+ * @returns A promise that resolves to true if the room is now a favorite, false otherwise.
+ */
+export const toggleFavorite = async (userId: string, roomId: string): Promise<boolean> => {
+    try {
+        const existing = await prisma.favoriteRoom.findUnique({
+            where: { userId_roomId: { userId, roomId } }
+        });
+
+        if (existing) {
+            await prisma.favoriteRoom.delete({
+                where: { userId_roomId: { userId, roomId } }
+            });
+            return false;
+        } else {
+            await prisma.favoriteRoom.create({
+                data: { userId, roomId }
+            });
+            return true;
+        }
+    } catch (error) {
+        throw new ApiError(500, 'Error al actualizar el estado de favoritos.');
+    }
+};
+
+/**
+ * Retrieves all favorite rooms for a specific user.
+ * @param userId - The ID of the user.
+ * @returns A promise that resolves to an array of room objects.
+ */
+export const findFavoritesByUserId = async (userId: string) => {
+    try {
+        const favorites = await prisma.favoriteRoom.findMany({
+            where: { userId, room: { deletedAt: null } },
+            include: { room: true },
+            orderBy: { createdAt: 'desc' }
+        });
+        return favorites.map(f => ({ ...f.room, isFavorite: true }));
+    } catch (error) {
+        throw new ApiError(500, 'Error al obtener tus salas favoritas.');
     }
 };
