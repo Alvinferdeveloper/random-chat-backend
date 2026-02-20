@@ -178,9 +178,13 @@ export const toggleFavoriteRoom = async (userId: string, roomId: string) => {
 };
 
 /**
- * Retrieves all favorite rooms for a user.
+ * Retrieves all favorite rooms for a user, with pagination and search.
  * @param userId - The ID of the user.
+ * @param page - The page number.
+ * @param limit - The items per page.
+ * @param search - Optional search string.
  */
-export const getUserFavoriteRooms = async (userId: string) => {
-    return RoomRepository.findFavoritesByUserId(userId);
+export const getUserFavoriteRooms = async (userId: string, page: number, limit: number, search?: string) => {
+    const normalizedSearch = search ? normalizeString(search) : undefined;
+    return RoomRepository.findFavoritesByUserId(userId, page, limit, normalizedSearch);
 };

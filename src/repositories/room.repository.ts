@@ -209,18 +209,51 @@ export const toggleFavorite = async (userId: string, roomId: string): Promise<bo
 };
 
 /**
- * Retrieves all favorite rooms for a specific user.
+ * Retrieves all favorite rooms for a specific user, with pagination and search.
  * @param userId - The ID of the user.
- * @returns A promise that resolves to an array of room objects.
+ * @param page - The page number.
+ * @param limit - The items per page.
+ * @param search - Optional search string.
+ * @returns Paginated favorite room data.
  */
-export const findFavoritesByUserId = async (userId: string) => {
+export const findFavoritesByUserId = async (userId: string, page: number, limit: number, search?: string) => {
     try {
-        const favorites = await prisma.favoriteRoom.findMany({
-            where: { userId, room: { deletedAt: null } },
-            include: { room: true },
-            orderBy: { createdAt: 'desc' }
-        });
-        return favorites.map(f => ({ ...f.room, isFavorite: true }));
+        const skip = (page - 1) * limit;
+        const take = limit;
+
+        const whereCondition: any = {
+            userId,
+            room: {
+                deletedAt: null
+            }
+        };
+
+        if (search) {
+            whereCondition.room.normalized_name = { contains: search };
+        }
+
+        const [favorites, totalItems] = await prisma.$transaction([
+            prisma.favoriteRoom.findMany({
+                where: whereCondition,
+                skip,
+                take,
+                include: { room: true },
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.favoriteRoom.count({ where: whereCondition })
+        ]);
+
+        const data = favorites.map(f => ({ ...f.room, isFavorite: true }));
+
+        return {
+            data,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(totalItems / limit),
+                totalItems,
+                hasNextPage: page < Math.ceil(totalItems / limit)
+            }
+        };
     } catch (error) {
         throw new ApiError(500, 'Error al obtener tus salas favoritas.');
     }
