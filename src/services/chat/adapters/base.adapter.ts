@@ -19,6 +19,24 @@ export interface LeaveResult {
     roomWasCleaned: boolean;
 }
 
+export interface ChatMessage {
+    id: string;
+    username: string;
+    userProfileImage: string | null;
+    message?: string;
+    imageUrl?: string;
+    description?: string;
+    replyTo?: ReplyContext;
+    reactions: string[];
+    timestamp: string;
+}
+
+export interface ReplyContext {
+    id: string;
+    author: string;
+    messageSnippet: string;
+}
+
 /**
  * Interface for a Chat State Adapter.
  * This contract abstracts the underlying state management implementation (e.g., in-memory, Redis),
@@ -45,4 +63,19 @@ export interface IChatAdapter {
      * @returns An object representing the state of all rooms.
      */
     getInitialState(): Promise<RoomState>;
+
+    /**
+     * Saves a message to the chat history for a specific sub-room.
+     * @param subRoomName - The sub-room to save the message to.
+     * @param message - The message object to save.
+     */
+    saveMessage(subRoomName: string, message: ChatMessage): Promise<void>;
+
+    /**
+     * Retrieves the last N messages from the chat history for a specific sub-room.
+     * @param subRoomName - The sub-room to get messages from.
+     * @param limit - The maximum number of messages to retrieve.
+     * @returns An array of chat messages, ordered from newest to oldest.
+     */
+    getRecentMessages(subRoomName: string, limit: number): Promise<ChatMessage[]>;
 }

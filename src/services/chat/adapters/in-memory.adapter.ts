@@ -1,6 +1,7 @@
-import { IChatAdapter, JoinResult, LeaveResult, RoomState, SubRoom } from '@/services/chat/adapters/base.adapter';
+import { IChatAdapter, JoinResult, LeaveResult, RoomState, SubRoom, ChatMessage } from '@/services/chat/adapters/base.adapter';
 
 const MAX_USERS_PER_SUBROOM = parseInt(process.env.MAX_USERS_PER_SUBROOM || '20', 10);
+const MAX_MESSAGES_HISTORY = parseInt(process.env.MAX_MESSAGES_HISTORY || '10', 10);
 
 type InMemorySubRoom = {
     name: string;
@@ -13,6 +14,7 @@ type InMemoryRoomValue = {
 };
 
 const roomState: Record<string, InMemoryRoomValue> = {};
+const messageHistory: Record<string, ChatMessage[]> = {};
 
 /**
  * An in-memory implementation of the IChatAdapter.
@@ -78,5 +80,20 @@ export class InMemoryAdapter implements IChatAdapter {
             };
         }
         return state;
+    }
+
+    public async saveMessage(subRoomName: string, message: ChatMessage): Promise<void> {
+        if (!messageHistory[subRoomName]) {
+            messageHistory[subRoomName] = [];
+        }
+        messageHistory[subRoomName].unshift(message);
+        if (messageHistory[subRoomName].length > MAX_MESSAGES_HISTORY) {
+            messageHistory[subRoomName].pop();
+        }
+    }
+
+    public async getRecentMessages(subRoomName: string, limit: number): Promise<ChatMessage[]> {
+        const messages = messageHistory[subRoomName] || [];
+        return messages.slice(0, limit);
     }
 }

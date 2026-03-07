@@ -1,7 +1,8 @@
-import { IChatAdapter, JoinResult, LeaveResult, RoomState } from '@/services/chat/adapters/base.adapter';
+import { IChatAdapter, JoinResult, LeaveResult, RoomState, ChatMessage } from '@/services/chat/adapters/base.adapter';
 import { Redis as RedisClient } from 'ioredis';
 
 const MAX_USERS_PER_SUBROOM = parseInt(process.env.MAX_USERS_PER_SUBROOM || '20', 10);
+const MAX_MESSAGES_HISTORY = parseInt(process.env.MAX_MESSAGES_HISTORY || '10', 10);
 
 // Lua script to join a room atomically
 // KEYS[1]: The key for the hash of the main room (e.g. 'room:general')
@@ -152,5 +153,18 @@ export class RedisAdapter implements IChatAdapter {
             });
         }
         return state;
+    }
+
+    public async saveMessage(subRoomName: string, message: ChatMessage): Promise<void> {
+        const messagesKey = `messages:${subRoomName}`;
+        const messageJson = JSON.stringify(message);
+        await this.redis.lpush(messagesKey, messageJson);
+        await this.redis.ltrim(messagesKey, 0, MAX_MESSAGES_HISTORY - 1);
+    }
+
+    public async getRecentMessages(subRoomName: string, limit: number): Promise<ChatMessage[]> {
+        const messagesKey = `messages:${subRoomName}`;
+        const messages = await this.redis.lrange(messagesKey, 0, limit - 1);
+        return messages.map(msg => JSON.parse(msg) as ChatMessage);
     }
 }

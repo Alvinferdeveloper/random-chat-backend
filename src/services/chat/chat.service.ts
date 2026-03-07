@@ -1,10 +1,12 @@
 import { Server, Socket } from 'socket.io';
 import crypto from 'crypto';
 import { roomExists } from '../room.service';
-import { IChatAdapter } from './adapters/base.adapter';
+import { IChatAdapter, ChatMessage } from './adapters/base.adapter';
 import * as UserRepository from '../../repositories/user.repository';
-import { supabase } from '@/lib/supabase'; // Import Supabase client
+import { supabase } from '@/lib/supabase';
 import ApiError from '@/utils/ApiError';
+
+const MAX_MESSAGES_HISTORY = parseInt(process.env.MAX_MESSAGES_HISTORY || '10', 10);
 
 interface ReplyContext {
     id: string;
@@ -83,6 +85,9 @@ export class ChatService {
         socket.data.subRoomName = subRoomName;
         socket.data.parentRoom = parentRoom;
 
+        const recentMessages = await this.adapter.getRecentMessages(subRoomName, MAX_MESSAGES_HISTORY);
+        socket.emit('message-history', recentMessages);
+
         socket.broadcast.to(subRoomName).emit('user-joined', {
             username: finalUsername,
             system: true,
@@ -103,7 +108,7 @@ export class ChatService {
         }
     }
 
-    private handleMessage(socket: Socket, payload: string | { message: string; replyTo?: ReplyContext }): void {
+    private async handleMessage(socket: Socket, payload: string | { message: string; replyTo?: ReplyContext }): Promise<void> {
         const { subRoomName, username, userProfileImage } = socket.data;
         if (!subRoomName) {
             socket.emit('error', 'No estás en una sala');
@@ -111,18 +116,21 @@ export class ChatService {
         }
 
         const isObjectPayload = typeof payload === 'object' && payload !== null;
-        const message = isObjectPayload ? payload.message : payload;
-        const replyTo = isObjectPayload ? payload.replyTo : null;
+        const messageContent = isObjectPayload ? payload.message : payload;
+        const replyTo = isObjectPayload ? payload.replyTo : undefined;
 
-        this.io.to(subRoomName).emit('message', {
+        const chatMessage: ChatMessage = {
             id: crypto.randomUUID(),
             username,
             userProfileImage,
-            message,
+            message: messageContent,
             replyTo,
             reactions: [],
             timestamp: new Date().toISOString(),
-        });
+        };
+
+        this.io.to(subRoomName).emit('message', chatMessage);
+        await this.adapter.saveMessage(subRoomName, chatMessage);
         this.handleStopTyping(socket);
     }
 
@@ -155,14 +163,14 @@ export class ChatService {
         }
     }
 
-    private handleImage(socket: Socket, payload: { imageUrl: string; description?: string; replyTo?: ReplyContext }): void {
+    private async handleImage(socket: Socket, payload: { imageUrl: string; description?: string; replyTo?: ReplyContext }): Promise<void> {
         const { subRoomName, username, userProfileImage } = socket.data;
         if (!subRoomName) {
             socket.emit('error', 'No estás en una sala');
             return;
         }
 
-        this.io.to(subRoomName).emit('image', {
+        const chatMessage: ChatMessage = {
             id: crypto.randomUUID(),
             username,
             userProfileImage,
@@ -171,7 +179,10 @@ export class ChatService {
             replyTo: payload.replyTo,
             reactions: [],
             timestamp: new Date().toISOString(),
-        });
+        };
+
+        this.io.to(subRoomName).emit('image', chatMessage);
+        await this.adapter.saveMessage(subRoomName, chatMessage);
         this.handleStopTyping(socket);
     }
 
