@@ -15,7 +15,7 @@ import { RedisAdapter } from '@/services/chat/adapters/redis.adapter';
 import { InMemoryAdapter } from '@/services/chat/adapters/in-memory.adapter';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { IChatAdapter } from '@/services/chat/adapters/base.adapter';
-import { getRedisClient } from '@/lib/redis';
+import { getRedisClient, isRedisActive } from '@/lib/redis';
 
 const app = express();
 
@@ -56,13 +56,18 @@ io.use(async (socket, next) => {
 // --- Adapter Switch ---
 let chatAdapter: IChatAdapter;
 
-if (process.env.CHAT_ADAPTER === 'redis') {
+if (isRedisActive()) {
     const redisClient = getRedisClient();
-    const pubClient = redisClient.duplicate();
-    const subClient = redisClient.duplicate();
+    if (redisClient) {
+        const pubClient = redisClient.duplicate();
+        const subClient = redisClient.duplicate();
 
-    io.adapter(createAdapter(pubClient, subClient));
-    chatAdapter = new RedisAdapter(redisClient);
+        io.adapter(createAdapter(pubClient, subClient));
+        chatAdapter = new RedisAdapter(redisClient);
+    } else {
+        console.warn('Redis adapter requested but client unavailable, falling back to InMemory');
+        chatAdapter = new InMemoryAdapter();
+    }
 } else {
     chatAdapter = new InMemoryAdapter();
 }

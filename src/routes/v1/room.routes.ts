@@ -6,7 +6,8 @@ import {
     updateRoom, 
     getUserRooms,
     getUserFavoriteRooms,
-    toggleFavoriteRoom 
+    toggleFavoriteRoom,
+    recordRoomActivity
 } from "../../controllers/room.controller";
 import { asyncHandler } from '../../utils/asyncHandler';
 import { validate } from '../../middlewares/validate';
@@ -39,6 +40,12 @@ router.post(
 
 // Protected route to toggle a room as favorite
 router.post('/:roomId/favorite', validateSession, asyncHandler(toggleFavoriteRoom));
+
+// Protected route to record user activity in a room
+router.post('/:roomId/activity', validateSession, asyncHandler(recordRoomActivity));
+
+// Protected route to decrement active users when leaving a room
+router.delete('/:roomId/activity', validateSession, asyncHandler(recordRoomActivity));
 
 // Protected route to generate a pre-signed URL for a room's image
 router.post(

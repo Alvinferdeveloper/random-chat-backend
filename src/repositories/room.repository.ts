@@ -1,6 +1,23 @@
 import prisma from '../lib/prisma';
 import ApiError from '../utils/ApiError';
 import { Room } from '@prisma/client';
+import { getRoomsWithActivity } from './user-room-activity.repository';
+import { getMultipleActiveUsersCounts } from '../services/room-active-users.service';
+
+const RECENCY_WEIGHT = 0.6;
+const POPULARITY_WEIGHT = 0.4;
+
+const calculateScore = (lastInteraction: Date | null, interactionCount: number, activeUsers: number, totalActiveUsers: number): number => {
+    let recencyScore = 0;
+    if (lastInteraction) {
+        const hoursSinceInteraction = (Date.now() - lastInteraction.getTime()) / (1000 * 60 * 60);
+        recencyScore = 1 / (hoursSinceInteraction + 1);
+    }
+    
+    const popularityScore = totalActiveUsers > 0 ? activeUsers / totalActiveUsers : 0;
+    
+    return (RECENCY_WEIGHT * recencyScore) + (POPULARITY_WEIGHT * popularityScore * 10);
+};
 
 /**
  * Finds a room by its unique ID, ensuring it's not logically deleted.
@@ -37,8 +54,8 @@ export const findAllPaginated = async (
 ) => {
     try {
         const skip = (page - 1) * limit;
-        const take = limit;
-
+        const POOL_SIZE = 500;
+        
         const whereCondition: any = {
             deletedAt: null
         };
@@ -50,12 +67,12 @@ export const findAllPaginated = async (
         if (options.search) {
             whereCondition.normalized_name = { contains: options.search };
         }
+
         const [rooms, totalItems] = await prisma.$transaction([
             prisma.room.findMany({
                 where: whereCondition,
-                skip: skip,
-                take: take,
                 orderBy: { created_at: 'desc' },
+                take: POOL_SIZE,
                 include: options.userId ? {
                     favoritedBy: {
                         where: { userId: options.userId },
@@ -66,14 +83,84 @@ export const findAllPaginated = async (
             prisma.room.count({ where: whereCondition })
         ]);
 
-        // Map rooms to include a simple 'isFavorite' boolean
-        const data = rooms.map(room => {
+        if (rooms.length === 0) {
+            return {
+                data: [],
+                pagination: {
+                    currentPage: page,
+                    totalPages: 0,
+                    totalItems: 0,
+                    hasNextPage: false
+                }
+            };
+        }
+
+        const roomIds = rooms.map(r => r.id);
+        
+        let activityMap: Record<string, { lastInteraction: Date; interactionCount: number }> = {};
+        let activeUsersMap: Record<string, number> = {};
+
+        if (options.userId && roomIds.length > 0) {
+            const activities = await getRoomsWithActivity(options.userId, roomIds);
+            activities.forEach(a => {
+                activityMap[a.roomId] = {
+                    lastInteraction: a.lastInteraction,
+                    interactionCount: a.interactionCount
+                };
+            });
+
+            const userActivityRoomIds = activities.map(a => a.roomId);
+            const roomsWithoutActivity = roomIds.filter(id => !userActivityRoomIds.includes(id));
+            
+            if (roomsWithoutActivity.length > 0) {
+                const roomsToAdd = await prisma.room.findMany({
+                    where: {
+                        id: { in: roomsWithoutActivity },
+                        deletedAt: null,
+                        ...(options.includeAllStatuses ? {} : { status: 'ACCEPTED' })
+                    },
+                    take: 100,
+                    orderBy: { created_at: 'desc' }
+                });
+
+                const existingIds = new Set(rooms.map(r => r.id));
+                const newRooms = roomsToAdd.filter(r => !existingIds.has(r.id));
+                
+                if (newRooms.length > 0) {
+                    rooms.push(...newRooms);
+                }
+            }
+        }
+
+        if (roomIds.length > 0) {
+            activeUsersMap = await getMultipleActiveUsersCounts(roomIds);
+        }
+
+        const totalActiveUsers = Object.values(activeUsersMap).reduce((sum, count) => sum + count, 0);
+
+        const scoredRooms = rooms.map(room => {
             const { favoritedBy, ...roomData } = room as any;
+            const activity = activityMap[room.id];
+            const activeUsers = activeUsersMap[room.id] || 0;
+            
+            const score = calculateScore(
+                activity?.lastInteraction || null,
+                activity?.interactionCount || 0,
+                activeUsers,
+                totalActiveUsers
+            );
+
             return {
                 ...roomData,
-                isFavorite: options.userId ? favoritedBy.length > 0 : false
+                isFavorite: options.userId ? favoritedBy?.length > 0 : false,
+                score: Math.round(score * 100) / 100,
+                activeUsers
             };
         });
+
+        scoredRooms.sort((a, b) => b.score - a.score);
+
+        const data = scoredRooms.slice(skip, skip + limit);
 
         return {
             data,

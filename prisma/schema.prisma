@@ -23,8 +23,8 @@ model Room {
   ownerId   String?    @db.Char(36)
   owner     User?      @relation("OwnedRooms", fields: [ownerId], references: [id], onDelete: Cascade)
   
-  // Relation to users who have favorited this room
   favoritedBy FavoriteRoom[]
+  userActivities UserRoomActivity[]
 }
 
 enum RoomStatus {
@@ -43,6 +43,19 @@ model FavoriteRoom {
 
   @@id([userId, roomId])
   @@map("favorite_room")
+}
+
+model UserRoomActivity {
+  userId             String    @db.Char(36)
+  roomId             String    @db.Char(36)
+  lastInteraction   DateTime  @default(now()) @db.DateTime(0)
+  interactionCount   Int       @default(1)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roomId])
+  @@map("user_room_activity")
 }
 
 model User {
@@ -65,6 +78,7 @@ model User {
   
   // Relation to rooms favorited by the user
   favoriteRooms      FavoriteRoom[]
+  roomActivities     UserRoomActivity[]
 
   @@unique([email])
   @@map("user")
