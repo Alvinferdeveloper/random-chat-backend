@@ -217,7 +217,8 @@ export class ChatService {
 
         this.handleStopTyping(socket);
         const { totalUsersInParentRoom } = await this.adapter.leaveRoom(parentRoom, subRoomName);
-        socket.to(subRoomName).emit('user-left', `${username || 'Anónimo'} ha salido de la sala.`);
+        
+        socket.to(subRoomName).emit('user-left', `${username || 'Anónimo'} ha salir de la sala.`);
         this.io.emit('user-count', { roomId: parentRoom, count: totalUsersInParentRoom });
         await this._broadcastUserList(subRoomName);
     }

@@ -96,4 +96,25 @@ export class InMemoryAdapter implements IChatAdapter {
         const messages = messageHistory[subRoomName] || [];
         return messages.slice(0, limit);
     }
+
+    public static getActiveUsersCounts(roomIds: string[]): Record<string, number> {
+        const result: Record<string, number> = {};
+        for (const roomId of roomIds) {
+            const room = roomState[roomId];
+            if (room) {
+                result[roomId] = room.subRooms.reduce((sum, sr) => sum + sr.userCount, 0);
+            } else {
+                result[roomId] = 0;
+            }
+        }
+        return result;
+    }
+
+    public static getAllActiveUsersCounts(): Record<string, number> {
+        const result: Record<string, number> = {};
+        for (const roomName in roomState) {
+            result[roomName] = roomState[roomName].subRooms.reduce((acc, sr) => acc + sr.userCount, 0);
+        }
+        return result;
+    }
 }

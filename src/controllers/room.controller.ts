@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import * as RoomService from '../services/room.service';
 import { recordActivity } from '../repositories/user-room-activity.repository';
-import { incrementActiveUsers, decrementActiveUsers } from '../services/room-active-users.service';
 import ApiError from '../utils/ApiError';
 
 export const getRooms = async (req: Request, res: Response) => {
@@ -111,24 +110,14 @@ export const getUserFavoriteRooms = async (req: Request, res: Response) => {
 };
 
 /**
- * Records user activity in a room and increments active users count.
- * Or decrements active users when leaving (DELETE method).
+ * Records user activity in a room for scoring purposes.
  */
 export const recordRoomActivity = async (req: Request, res: Response) => {
     const user = req.user;
     if (!user || !user.id) throw new ApiError(401, 'Usuario no autenticado.');
 
     const { roomId } = req.params;
-    const isDelete = req.method === 'DELETE';
+    await recordActivity(user.id, roomId);
 
-    if (isDelete) {
-        await decrementActiveUsers(roomId);
-    } else {
-        await Promise.all([
-            recordActivity(user.id, roomId),
-            incrementActiveUsers(roomId)
-        ]);
-    }
-
-    res.status(200).json({ success: true, message: isDelete ? 'Usuario salió de la sala.' : 'Actividad registrada.' });
+    res.status(200).json({ success: true, message: 'Actividad registrada.' });
 };

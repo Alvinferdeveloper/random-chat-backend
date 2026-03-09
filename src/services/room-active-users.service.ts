@@ -1,56 +1,45 @@
-import { getRedisClient } from '@/lib/redis';
+import { isRedisActive } from '@/lib/redis';
+import { InMemoryAdapter } from '@/services/chat/adapters/in-memory.adapter';
+import { RedisAdapter } from '@/services/chat/adapters/redis.adapter';
 
-const ACTIVE_USERS_KEY = 'room:active_users';
+let redisAdapterInstance: RedisAdapter | null = null;
 
-export const incrementActiveUsers = async (roomId: string) => {
-    const redis = getRedisClient();
-    if (!redis) return;
-    await redis.zincrby(ACTIVE_USERS_KEY, 1, roomId);
-};
-
-export const decrementActiveUsers = async (roomId: string) => {
-    const redis = getRedisClient();
-    if (!redis) return;
-    await redis.zincrby(ACTIVE_USERS_KEY, -1, roomId);
+export const setRedisAdapter = (adapter: RedisAdapter) => {
+    redisAdapterInstance = adapter;
 };
 
 export const getActiveUsersCount = async (roomId: string): Promise<number> => {
-    const redis = getRedisClient();
-    if (!redis) return 0;
-    const count = await redis.zscore(ACTIVE_USERS_KEY, roomId);
-    return count ? parseInt(count, 10) : 0;
+    const counts = await getMultipleActiveUsersCounts([roomId]);
+    return counts[roomId] || 0;
 };
 
 export const getMultipleActiveUsersCounts = async (roomIds: string[]): Promise<Record<string, number>> => {
-    const redis = getRedisClient();
-    if (!redis || !roomIds.length) return {};
+    if (!roomIds.length) return {};
     
-    const pipeline = redis.pipeline();
-    for (const roomId of roomIds) {
-        pipeline.zscore(ACTIVE_USERS_KEY, roomId);
+    if (isRedisActive() && redisAdapterInstance) {
+        const state = await redisAdapterInstance.getInitialState();
+        const result: Record<string, number> = {};
+        for (const roomId of roomIds) {
+            result[roomId] = state[roomId]?.userCount || 0;
+        }
+        return result;
     }
-    const results = await pipeline.exec();
     
-    const result: Record<string, number> = {};
-    roomIds.forEach((roomId, index) => {
-        const count = results?.[index]?.[1] as string | null;
-        result[roomId] = count ? parseInt(count, 10) : 0;
-    });
-    return result;
+    return InMemoryAdapter.getActiveUsersCounts(roomIds);
 };
 
 export const getTopActiveRooms = async (limit: number = 10): Promise<{ roomId: string; count: number }[]> => {
-    const redis = getRedisClient();
-    if (!redis) return [];
-    
-    const results = await redis.zrevrange(ACTIVE_USERS_KEY, 0, limit - 1, 'WITHSCORES');
-    
-    const rooms: { roomId: string; count: number }[] = [];
-    for (let i = 0; i < results.length; i += 2) {
-        rooms.push({
-            roomId: results[i],
-            count: parseInt(results[i + 1], 10)
-        });
+    if (isRedisActive() && redisAdapterInstance) {
+        const state = await redisAdapterInstance.getInitialState();
+        return Object.entries(state)
+            .map(([roomId, data]) => ({ roomId, count: data.userCount }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, limit);
     }
-    return rooms;
+    
+    const allCounts = InMemoryAdapter.getAllActiveUsersCounts();
+    return Object.entries(allCounts)
+        .map(([roomId, count]) => ({ roomId, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, limit);
 };

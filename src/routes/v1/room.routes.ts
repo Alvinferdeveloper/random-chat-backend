@@ -44,9 +44,6 @@ router.post('/:roomId/favorite', validateSession, asyncHandler(toggleFavoriteRoo
 // Protected route to record user activity in a room
 router.post('/:roomId/activity', validateSession, asyncHandler(recordRoomActivity));
 
-// Protected route to decrement active users when leaving a room
-router.delete('/:roomId/activity', validateSession, asyncHandler(recordRoomActivity));
-
 // Protected route to generate a pre-signed URL for a room's image
 router.post(
     '/:roomId/generate-upload-url',
