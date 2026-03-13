@@ -18,7 +18,29 @@ import { IChatAdapter } from '@/services/chat/adapters/base.adapter';
 import { getRedisClient, isRedisActive } from '@/lib/redis';
 import { setRedisAdapter } from '@/services/room-active-users.service';
 
+import helmet from 'helmet';
+import { rateLimit } from 'express-rate-limit';
+
 const app = express();
+
+// Trust proxy is required if you are behind a load balancer (Vercel, Railway, Nginx, etc.)
+app.set('trust proxy', 1);
+
+app.use(helmet());
+
+// Global Rate Limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per window
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Demasiadas peticiones desde esta IP, por favor intenta de nuevo en 15 minutos."
+    }
+});
+
+app.use(limiter);
 
 const allowedOrigins = JSON.parse(process.env.ALLOWED_ORIGINS || '[]');
 
