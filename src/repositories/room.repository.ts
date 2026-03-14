@@ -268,6 +268,62 @@ export const findByOwnerId = async (ownerId: string): Promise<Room[]> => {
 };
 
 /**
+ * Retrieves a paginated list of rooms by status.
+ * @param status - The room status to filter by.
+ * @param page - The page number.
+ * @param limit - The items per page.
+ */
+export const findAllByStatus = async (status: 'IN_REVISION' | 'ACCEPTED' | 'REJECTED', page: number, limit: number) => {
+    try {
+        const skip = (page - 1) * limit;
+        const [rooms, totalItems] = await prisma.$transaction([
+            prisma.room.findMany({
+                where: { status, deletedAt: null },
+                orderBy: { created_at: 'desc' },
+                skip,
+                take: limit,
+                include: {
+                    owner: {
+                        select: { name: true, email: true, username: true }
+                    }
+                }
+            }),
+            prisma.room.count({
+                where: { status, deletedAt: null }
+            })
+        ]);
+
+        return {
+            data: rooms,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(totalItems / limit),
+                totalItems,
+                hasNextPage: page < Math.ceil(totalItems / limit)
+            }
+        };
+    } catch (error) {
+        throw new ApiError(500, 'Error al obtener las salas por estado.');
+    }
+};
+
+/**
+ * Updates the status of a room.
+ * @param roomId - The ID of the room.
+ * @param status - The new status.
+ */
+export const updateStatus = async (roomId: string, status: 'IN_REVISION' | 'ACCEPTED' | 'REJECTED') => {
+    try {
+        return await prisma.room.update({
+            where: { id: roomId },
+            data: { status }
+        });
+    } catch (error) {
+        throw new ApiError(500, 'Error al actualizar el estado de la sala.');
+    }
+};
+
+/**
  * Toggles the favorite status of a room for a user.
  * @param userId - The ID of the user.
  * @param roomId - The ID of the room.

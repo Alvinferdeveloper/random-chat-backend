@@ -11,7 +11,7 @@ export const auth = betterAuth({
 
     emailAndPassword: {
         enabled: true,
-        requireEmailVerification: true,
+        requireEmailVerification: false,
     },
     emailVerification: {
         sendVerificationEmail: async ({ user, url }) => {
@@ -33,11 +33,12 @@ export const auth = betterAuth({
     },
     plugins: [
         customSession(async ({ user, session }) => {
-            const userDoc = await prisma.user.findFirst({ where: { id: session.userId }, select: { username: true } });
+            const userDoc = await prisma.user.findFirst({ where: { id: session.userId }, select: { username: true, role: true } });
             return {
                 user: {
                     ...user,
-                    isCompleteProfile: !!userDoc?.username
+                    isCompleteProfile: !!userDoc?.username,
+                    role: userDoc?.role
                 },
                 session
             }

@@ -1,11 +1,11 @@
-import { Request, Response, NextFunction } from "express";
+import { RequestHandler } from "express";
 import { auth } from "../lib/auth";
 
-export default function validateSession(
-    req: Request,
-    res: Response,
-    next: NextFunction
-) {
+const validateSession: RequestHandler = (
+    req,
+    res,
+    next
+) => {
     const headers = new Headers();
     Object.entries(req.headers).forEach(([key, value]) => {
         if (typeof value === "string") {
@@ -26,3 +26,5 @@ export default function validateSession(
         })
         .catch(() => res.status(401).json({ message: "Sesión inválida" }));
 }
+
+export default validateSession;

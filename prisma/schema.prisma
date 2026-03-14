@@ -69,6 +69,7 @@ model User {
   location           String?            
   ageRange           AgeRange?          
   conversationType   ConversationType?  
+  role               UserRole           @default(USER)
   createdAt          DateTime
   updatedAt          DateTime
   sessions           Session[]
@@ -82,6 +83,11 @@ model User {
 
   @@unique([email])
   @@map("user")
+}
+
+enum UserRole {
+  USER
+  ADMIN
 }
 
 model Hobby {

@@ -6,6 +6,7 @@ import { ChatService } from '@/services/chat/chat.service';
 import roomRouter from '@/routes/v1/room.routes';
 import userRouter from '@/routes/v1/user.routes';
 import hobbyRouter from '@/routes/v1/hobby.routes';
+import adminRouter from '@/routes/v1/admin.routes';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from '@/lib/auth';
 import cors from 'cors';
@@ -117,6 +118,7 @@ app.all("/api/auth/{*any}", toNodeHandler(auth));
 
 app.use(express.json());
 app.use('/api/v1/rooms', roomRouter);
+app.use('/api/v1/admin', adminRouter);
 app.use(validateSession);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/hobbies', hobbyRouter);
