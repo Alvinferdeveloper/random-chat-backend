@@ -20,7 +20,7 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import { IChatAdapter } from '@/services/chat/adapters/base.adapter';
 import { getRedisClient, isRedisActive } from '@/lib/redis';
 import { setRedisAdapter } from '@/services/room-active-users.service';
-import { generalLimiter, authLimiter, createRoomLimiter, profileUpdateLimiter } from '@/config/rateLimiters';
+import { generalLimiter, authLimiter } from '@/config/rateLimiters';
 import { csrfProtection } from '@/middlewares/csrfProtection';
 import healthRouter from '@/routes/v1/health.routes';
 import { setupGracefulShutdown } from '@/lib/gracefulShutdown';
@@ -79,10 +79,10 @@ app.use(csrfProtection);
 app.all("/api/auth/{*any}", authLimiter, toNodeHandler(auth));
 
 app.use(express.json());
-app.use('/api/v1/rooms', createRoomLimiter, roomRouter);
+app.use('/api/v1/rooms', roomRouter);
 app.use('/api/v1/admin', adminRouter);
 app.use(validateSession);
-app.use('/api/v1/users', profileUpdateLimiter, userRouter);
+app.use('/api/v1/users', userRouter);
 app.use('/api/v1/hobbies', hobbyRouter);
 app.use('/api/v1/health', healthRouter);
 

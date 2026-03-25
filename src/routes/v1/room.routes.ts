@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { 
-    getRooms, 
-    createRoom, 
-    generateRoomUploadUrl, 
-    updateRoom, 
+import {
+    getRooms,
+    createRoom,
+    generateRoomUploadUrl,
+    updateRoom,
     getUserRooms,
     getUserFavoriteRooms,
     toggleFavoriteRoom,
@@ -11,10 +11,11 @@ import {
 } from "../../controllers/room.controller";
 import { asyncHandler } from '../../utils/asyncHandler';
 import { validate } from '../../middlewares/validate';
-import { 
-    getRoomsSchema, 
-    createRoomSchema, 
-    generateRoomUploadUrlSchema, 
+import { createRoomLimiter } from '@/config/rateLimiters';
+import {
+    getRoomsSchema,
+    createRoomSchema,
+    generateRoomUploadUrlSchema,
     updateRoomSchema,
     toggleFavoriteRoomSchema,
     recordRoomActivitySchema,
@@ -37,6 +38,7 @@ router.get('/favorites', validateSession, validate(getUserFavoriteRoomsSchema), 
 router.post(
     '/',
     validateSession,
+    createRoomLimiter,
     validate(createRoomSchema),
     asyncHandler(createRoom)
 );
