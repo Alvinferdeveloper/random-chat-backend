@@ -48,3 +48,23 @@ export const updateRoomSchema = z.object({
         { message: 'Solo se puede actualizar un campo a la vez.' }
     ),
 });
+
+export const toggleFavoriteRoomSchema = z.object({
+    params: z.object({
+        roomId: z.string().uuid('ID de sala inválido.'),
+    }),
+});
+
+export const recordRoomActivitySchema = z.object({
+    params: z.object({
+        roomId: z.string().uuid('ID de sala inválido.'),
+    }),
+});
+
+export const getUserFavoriteRoomsSchema = z.object({
+    query: z.object({
+        page: z.coerce.number().int().positive().optional().default(1),
+        limit: z.coerce.number().int().positive().max(100).optional().default(10),
+        q: z.string().max(100).optional(),
+    }),
+});

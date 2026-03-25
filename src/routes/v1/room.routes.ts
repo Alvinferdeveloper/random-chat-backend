@@ -15,7 +15,10 @@ import {
     getRoomsSchema, 
     createRoomSchema, 
     generateRoomUploadUrlSchema, 
-    updateRoomSchema 
+    updateRoomSchema,
+    toggleFavoriteRoomSchema,
+    recordRoomActivitySchema,
+    getUserFavoriteRoomsSchema
 } from '../../validations/room.validation';
 import validateSession from "../../middlewares/validateSession";
 import optionalSession from "../../middlewares/optionalSession";
@@ -28,7 +31,7 @@ router.get('/', optionalSession, validate(getRoomsSchema), asyncHandler(getRooms
 router.get('/my-rooms', validateSession, asyncHandler(getUserRooms));
 
 // Protected route to get user's favorite rooms
-router.get('/favorites', validateSession, asyncHandler(getUserFavoriteRooms));
+router.get('/favorites', validateSession, validate(getUserFavoriteRoomsSchema), asyncHandler(getUserFavoriteRooms));
 
 // Protected route to create a new room
 router.post(
@@ -39,10 +42,10 @@ router.post(
 );
 
 // Protected route to toggle a room as favorite
-router.post('/:roomId/favorite', validateSession, asyncHandler(toggleFavoriteRoom));
+router.post('/:roomId/favorite', validateSession, validate(toggleFavoriteRoomSchema), asyncHandler(toggleFavoriteRoom));
 
 // Protected route to record user activity in a room
-router.post('/:roomId/activity', validateSession, asyncHandler(recordRoomActivity));
+router.post('/:roomId/activity', validateSession, validate(recordRoomActivitySchema), asyncHandler(recordRoomActivity));
 
 // Protected route to generate a pre-signed URL for a room's image
 router.post(
