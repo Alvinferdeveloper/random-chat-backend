@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 type RateLimitHandler = ReturnType<typeof rateLimit>;
 
@@ -11,7 +11,7 @@ export const generalLimiter: RateLimitHandler = rateLimit({
         success: false,
         message: "Demasiadas peticiones, por favor intenta de nuevo más tarde."
     },
-    keyGenerator: (req) => req.ip || 'unknown',
+    keyGenerator: (req) => ipKeyGenerator(req.ip || 'unknown'),
 });
 
 export const authLimiter: RateLimitHandler = rateLimit({
@@ -23,7 +23,7 @@ export const authLimiter: RateLimitHandler = rateLimit({
         success: false,
         message: "Demasiados intentos de autenticación, por favor intenta de nuevo en 15 minutos."
     },
-    keyGenerator: (req) => `auth:${req.ip}`,
+    keyGenerator: (req) => ipKeyGenerator(`auth:${req.ip}`),
 });
 
 export const createRoomLimiter: RateLimitHandler = rateLimit({
@@ -35,7 +35,7 @@ export const createRoomLimiter: RateLimitHandler = rateLimit({
         success: false,
         message: "Has creado demasiadas salas. Intenta de nuevo en una hora."
     },
-    keyGenerator: (req) => `create-room:${req.ip}`,
+    keyGenerator: (req) => ipKeyGenerator(`create-room:${req.ip}`),
 });
 
 export const profileUpdateLimiter: RateLimitHandler = rateLimit({
@@ -47,5 +47,5 @@ export const profileUpdateLimiter: RateLimitHandler = rateLimit({
         success: false,
         message: "Estás realizando demasiadas actualizaciones. Reduce el ritmo."
     },
-    keyGenerator: (req) => `profile:${req.ip || 'unknown'}`,
+    keyGenerator: (req) => ipKeyGenerator(`profile:${req.ip}`),
 });
