@@ -21,6 +21,7 @@ import { IChatAdapter } from '@/services/chat/adapters/base.adapter';
 import { getRedisClient, isRedisActive } from '@/lib/redis';
 import { setRedisAdapter } from '@/services/room-active-users.service';
 import { generalLimiter, authLimiter, createRoomLimiter, profileUpdateLimiter } from '@/config/rateLimiters';
+import { csrfProtection } from '@/middlewares/csrfProtection';
 
 const app = express();
 const allowedOrigins = JSON.parse(process.env.ALLOWED_ORIGINS || '[]');
@@ -70,6 +71,8 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
+
+app.use(csrfProtection);
 
 app.all("/api/auth/{*any}", authLimiter, toNodeHandler(auth));
 

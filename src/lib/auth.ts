@@ -9,6 +9,12 @@ export const auth = betterAuth({
         provider: "mysql",
     }),
 
+    cookiePrefix: 'random-chat',
+    
+    advanced: {
+        cookiePrefix: 'random-chat',
+    },
+
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: false,
