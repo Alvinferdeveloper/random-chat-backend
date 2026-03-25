@@ -22,6 +22,8 @@ import { getRedisClient, isRedisActive } from '@/lib/redis';
 import { setRedisAdapter } from '@/services/room-active-users.service';
 import { generalLimiter, authLimiter, createRoomLimiter, profileUpdateLimiter } from '@/config/rateLimiters';
 import { csrfProtection } from '@/middlewares/csrfProtection';
+import healthRouter from '@/routes/v1/health.routes';
+import { setupGracefulShutdown } from '@/lib/gracefulShutdown';
 
 const app = express();
 const allowedOrigins = JSON.parse(process.env.ALLOWED_ORIGINS || '[]');
@@ -82,6 +84,7 @@ app.use('/api/v1/admin', adminRouter);
 app.use(validateSession);
 app.use('/api/v1/users', profileUpdateLimiter, userRouter);
 app.use('/api/v1/hobbies', hobbyRouter);
+app.use('/api/v1/health', healthRouter);
 
 app.use(errorHandler);
 
@@ -89,6 +92,8 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
     console.log(`Servidor escuchando en puerto ${PORT}`);
 });
+
+setupGracefulShutdown(server, io);
 
 function setupChatAdapter(): IChatAdapter {
     if (isRedisActive()) {
