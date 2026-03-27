@@ -12,7 +12,7 @@ export const recordActivity = async (userId: string, roomId: string) => {
             create: { userId, roomId }
         });
     } catch (error) {
-        console.error('Error recording activity:', error);
+        throw new ApiError(500, 'Error al registrar la actividad del usuario.');
     }
 };
 
@@ -30,8 +30,7 @@ export const getUserRecentActivity = async (userId: string, limit: number = 10) 
         });
         return activities;
     } catch (error) {
-        console.error('Error getting user activity:', error);
-        return [];
+        throw new ApiError(500, 'Error al obtener la actividad reciente del usuario.');
     }
 };
 
@@ -52,7 +51,6 @@ export const getRoomsWithActivity = async (userId: string, roomIds: string[]) =>
         });
         return activities;
     } catch (error) {
-        console.error('Error getting rooms with activity:', error);
-        return [];
+        throw new ApiError(500, 'Error al obtener las salas con actividad del usuario.');
     }
 };
