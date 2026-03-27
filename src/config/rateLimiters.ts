@@ -15,8 +15,8 @@ export const generalLimiter: RateLimitHandler = rateLimit({
 });
 
 export const authLimiter: RateLimitHandler = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 5,
+    windowMs: 60 * 1000,
+    max: 10,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: {
