@@ -46,17 +46,19 @@ export interface IChatAdapter {
     /**
      * Handles the logic of a user joining a parent room, finding or creating a sub-room.
      * @param parentRoom - The main room the user wants to join.
+     * @param userId - A unique identifier for the user (e.g., database ID or username).
      * @returns The name of the sub-room the user was placed in and the new total user count.
      */
-    joinRoom(parentRoom: string): Promise<JoinResult>;
+    joinRoom(parentRoom: string, userId: string): Promise<JoinResult>;
 
     /**
      * Handles the logic of a user leaving a sub-room.
      * @param parentRoom - The main room the user is leaving.
      * @param subRoomName - The specific sub-room the user is in.
+     * @param userId - A unique identifier for the user.
      * @returns The new total user count for the parent room.
      */
-    leaveRoom(parentRoom: string, subRoomName: string): Promise<LeaveResult>;
+    leaveRoom(parentRoom: string, subRoomName: string, userId: string): Promise<LeaveResult>;
 
     /**
      * Retrieves the current state of all rooms, typically user counts.

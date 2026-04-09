@@ -31,11 +31,20 @@ export class ChatService {
     private async _broadcastUserList(subRoomName: string): Promise<void> {
         try {
             const sockets = await this.io.in(subRoomName).fetchSockets();
-            const userList = sockets.map(socket => ({
-                id: socket.id,
-                username: socket.data.username,
-                profileImage: socket.data.userProfileImage,
-            }));
+            const uniqueUsers = new Map();
+
+            for (const socket of sockets) {
+                const userId = socket.data.userId;
+                if (!uniqueUsers.has(userId)) {
+                    uniqueUsers.set(userId, {
+                        id: userId, // Use userId as the unique identifier
+                        username: socket.data.username,
+                        profileImage: socket.data.userProfileImage,
+                    });
+                }
+            }
+
+            const userList = Array.from(uniqueUsers.values());
             this.io.to(subRoomName).emit('room_users', userList);
         } catch (error) {
             console.error(`Error broadcasting user list for room ${subRoomName}:`, error);
@@ -68,7 +77,9 @@ export class ChatService {
             return;
         }
 
-        const { subRoomName, totalUsersInParentRoom } = await this.adapter.joinRoom(parentRoom);
+        const userId = socket.data.user?.id || clientUsername;
+
+        const { subRoomName, totalUsersInParentRoom } = await this.adapter.joinRoom(parentRoom, userId);
         await socket.join(subRoomName);
 
         let finalUsername = clientUsername;
@@ -81,6 +92,7 @@ export class ChatService {
         }
 
         socket.data.username = finalUsername;
+        socket.data.userId = userId;
         socket.data.userProfileImage = userProfileImage;
         socket.data.subRoomName = subRoomName;
         socket.data.parentRoom = parentRoom;
@@ -141,8 +153,8 @@ export class ChatService {
         try {
             const bucketName = 'chat-images';
             const fileExtension = payload.contentType.split('/')[1] || 'jpg';
-            const userId = user ? user.id : 'anonymous';
-            const filePath = `${subRoomName}/${userId}-${Date.now()}.${fileExtension}`;
+            const userIdForImage = user ? user.id : 'anonymous';
+            const filePath = `${subRoomName}/${userIdForImage}-${Date.now()}.${fileExtension}`;
 
             const { data, error } = await supabase.storage
                 .from(bucketName)
@@ -212,13 +224,13 @@ export class ChatService {
     }
 
     private async handleDisconnect(socket: Socket): Promise<void> {
-        const { parentRoom, subRoomName, username } = socket.data;
-        if (!parentRoom || !subRoomName) return;
+        const { parentRoom, subRoomName, username, userId } = socket.data;
+        if (!parentRoom || !subRoomName || !userId) return;
 
         this.handleStopTyping(socket);
-        const { totalUsersInParentRoom } = await this.adapter.leaveRoom(parentRoom, subRoomName);
+        const { totalUsersInParentRoom } = await this.adapter.leaveRoom(parentRoom, subRoomName, userId);
         
-        socket.to(subRoomName).emit('user-left', `${username || 'Anónimo'} ha salir de la sala.`);
+        socket.to(subRoomName).emit('user-left', `${username || 'Anónimo'} ha salido de la sala.`);
         this.io.emit('user-count', { roomId: parentRoom, count: totalUsersInParentRoom });
         await this._broadcastUserList(subRoomName);
     }
