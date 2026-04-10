@@ -13,9 +13,9 @@ const calculateScore = (lastInteraction: Date | null, interactionCount: number, 
         const hoursSinceInteraction = (Date.now() - lastInteraction.getTime()) / (1000 * 60 * 60);
         recencyScore = 1 / (hoursSinceInteraction + 1);
     }
-    
+
     const popularityScore = totalActiveUsers > 0 ? activeUsers / totalActiveUsers : 0;
-    
+
     return (RECENCY_WEIGHT * recencyScore) + (POPULARITY_WEIGHT * popularityScore * 10);
 };
 
@@ -55,7 +55,7 @@ export const findAllPaginated = async (
     try {
         const skip = (page - 1) * limit;
         const POOL_SIZE = 500;
-        
+
         const whereCondition: any = {
             deletedAt: null
         };
@@ -96,7 +96,7 @@ export const findAllPaginated = async (
         }
 
         const roomIds = rooms.map(r => r.id);
-        
+
         let activityMap: Record<string, { lastInteraction: Date; interactionCount: number }> = {};
         let activeUsersMap: Record<string, number> = {};
 
@@ -111,7 +111,7 @@ export const findAllPaginated = async (
 
             const userActivityRoomIds = activities.map(a => a.roomId);
             const roomsWithoutActivity = roomIds.filter(id => !userActivityRoomIds.includes(id));
-            
+
             if (roomsWithoutActivity.length > 0) {
                 const roomsToAdd = await prisma.room.findMany({
                     where: {
@@ -125,7 +125,7 @@ export const findAllPaginated = async (
 
                 const existingIds = new Set(rooms.map(r => r.id));
                 const newRooms = roomsToAdd.filter(r => !existingIds.has(r.id));
-                
+
                 if (newRooms.length > 0) {
                     rooms.push(...newRooms);
                 }
@@ -142,7 +142,7 @@ export const findAllPaginated = async (
             const { favoritedBy, ...roomData } = room as any;
             const activity = activityMap[room.id];
             const activeUsers = activeUsersMap[room.id] || 0;
-            
+
             const score = calculateScore(
                 activity?.lastInteraction || null,
                 activity?.interactionCount || 0,
@@ -259,9 +259,30 @@ export const findByOwnerId = async (ownerId: string): Promise<Room[]> => {
                 ownerId,
                 deletedAt: null
             },
+            select: {
+                id: true,
+                name: true,
+                normalized_name: true,
+                short_description: true,
+                full_description: true,
+                server_banner: true,
+                server_icon: true,
+                created_at: true,
+                verified: true,
+                status: true,
+                deletedAt: true,
+                ownerId: true,
+                favoritedBy: {
+                    where: { userId: ownerId },
+                    select: { userId: true }
+                }
+            },
             orderBy: { created_at: 'desc' }
         });
-        return rooms;
+        return rooms.map(room => ({
+            ...room,
+            isFavorite: room.favoritedBy.length > 0
+        }));
     } catch (error) {
         throw new ApiError(500, 'Error al obtener las salas del usuario.');
     }
