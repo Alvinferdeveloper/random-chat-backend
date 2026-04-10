@@ -147,6 +147,19 @@ export const generateRoomUploadUrl = async (roomId: string, type: 'banner' | 'ic
  * @param userId - The ID of the user requesting the update, for permission check.
  */
 export const updateRoomAttribute = async (roomId: string, field: string, value: any, userId: string) => {
+    // Whitelist allowed fields to prevent Mass Assignment
+    const allowedFields = ['server_banner', 'server_icon', 'name', 'short_description', 'full_description'];
+    if (!allowedFields.includes(field)) {
+        throw new ApiError(400, 'El campo proporcionado no es válido para actualización.');
+    }
+
+    // Basic URL validation ONLY if it's an image field
+    if (['server_banner', 'server_icon'].includes(field)) {
+        if (typeof value !== 'string' || !value.startsWith('http')) {
+            throw new ApiError(400, 'El valor proporcionado debe ser una URL válida.');
+        }
+    }
+
     const room = await RoomRepository.findById(roomId);
     if (!room) {
         throw new ApiError(404, 'La sala no existe.');
@@ -155,7 +168,27 @@ export const updateRoomAttribute = async (roomId: string, field: string, value: 
         throw new ApiError(403, 'No tienes permiso para editar esta sala.');
     }
 
-    await RoomRepository.updateAttribute(roomId, field, value);
+    // Special logic for 'name' to update normalized_name and check for duplicates
+    if (field === 'name') {
+        const normalized = normalizeString(value);
+        if (normalized.length < 3) {
+            throw new ApiError(400, 'El nombre de la sala es demasiado corto.');
+        }
+
+        // Only check for duplicates if the name actually changed its normalized version
+        if (normalized !== room.normalized_name) {
+            const exists = await RoomRepository.existsByNameNormalized(normalized);
+            if (exists) {
+                throw new ApiError(409, 'Ya existe una sala con un nombre muy similar.');
+            }
+        }
+
+        // Update name AND normalized_name together
+        await RoomRepository.updateAttribute(roomId, 'name', value);
+        await RoomRepository.updateAttribute(roomId, 'normalized_name', normalized);
+    } else {
+        await RoomRepository.updateAttribute(roomId, field, value);
+    }
 };
 
 /**

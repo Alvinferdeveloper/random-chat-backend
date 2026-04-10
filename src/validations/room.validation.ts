@@ -41,6 +41,18 @@ export const generateRoomUploadUrlSchema = z.object({
 
 export const updateRoomSchema = z.object({
     body: z.object({
+        name: z.string()
+            .min(3, 'El nombre de la sala debe tener al menos 3 caracteres.')
+            .max(50, 'El nombre de la sala no puede exceder los 50 caracteres.')
+            .optional(),
+        short_description: z.string()
+            .min(10, 'La descripción corta debe tener al menos 10 caracteres.')
+            .max(45, 'La descripción corta no puede exceder los 45 caracteres.')
+            .optional(),
+        full_description: z.string()
+            .min(20, 'La descripción completa debe tener al menos 20 caracteres.')
+            .max(300, 'La descripción completa no puede exceder los 300 caracteres.')
+            .optional(),
         server_banner: z.string().url('La URL del banner no es válida.').optional(),
         server_icon: z.string().url('La URL del icono no es válida.').optional(),
     }).partial().refine(

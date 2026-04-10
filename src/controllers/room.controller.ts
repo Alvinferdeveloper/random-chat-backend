@@ -50,12 +50,6 @@ export const updateRoom = async (req: Request, res: Response) => {
 
     const { roomId } = req.params;
     const fieldToUpdate = Object.keys(req.body)[0];
-
-    const allowedFields = ['server_banner', 'server_icon'];
-    if (!allowedFields.includes(fieldToUpdate)) {
-        throw new ApiError(400, 'El campo proporcionado no es válido para actualización.');
-    }
-
     const value = req.body[fieldToUpdate];
 
     await RoomService.updateRoomAttribute(roomId, fieldToUpdate, value, user.id);
