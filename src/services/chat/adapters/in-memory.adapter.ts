@@ -29,11 +29,11 @@ export class InMemoryAdapter implements IChatAdapter {
         }
 
         const room = roomState[parentRoom];
-        
+
         // 1. Priority: Find a sub-room where the user is ALREADY present (Room Affinity)
         // We ignore the MAX_USERS_PER_SUBROOM limit if the user is already there.
         let targetSubRoom = room.subRooms.find(sr => sr.users[userId] !== undefined);
-        
+
         // 2. Secondary: Find a sub-room that has space for a NEW unique user
         if (!targetSubRoom) {
             targetSubRoom = room.subRooms.find(sr => Object.keys(sr.users).length < MAX_USERS_PER_SUBROOM);
@@ -100,9 +100,9 @@ export class InMemoryAdapter implements IChatAdapter {
         if (!messageHistory[subRoomName]) {
             messageHistory[subRoomName] = [];
         }
-        messageHistory[subRoomName].unshift(message);
+        messageHistory[subRoomName].push(message);
         if (messageHistory[subRoomName].length > MAX_MESSAGES_HISTORY) {
-            messageHistory[subRoomName].pop();
+            messageHistory[subRoomName].shift();
         }
     }
 
