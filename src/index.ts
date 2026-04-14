@@ -40,6 +40,8 @@ const io = new Server(server, {
         credentials: true
     },
     maxHttpBufferSize: 1e7,
+    pingTimeout: 10000, // 10s to declare disconnection after not receiving pong
+    pingInterval: 5000,  // Send ping every 5s
 });
 
 io.use(async (socket, next) => {
