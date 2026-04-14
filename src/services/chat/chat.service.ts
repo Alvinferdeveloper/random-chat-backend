@@ -175,14 +175,14 @@ export class ChatService {
         }
     }
 
-    private async handleImage(socket: Socket, payload: { imageUrl: string; description?: string; replyTo?: ReplyContext }): Promise<void> {
+    private async handleImage(socket: Socket, payload: { imageUrl: string; description?: string; replyTo?: ReplyContext; tempId?: string }): Promise<void> {
         const { subRoomName, username, userProfileImage } = socket.data;
         if (!subRoomName) {
             socket.emit('error', 'No estás en una sala');
             return;
         }
 
-        const chatMessage: ChatMessage = {
+        const chatMessage = {
             id: crypto.randomUUID(),
             username,
             userProfileImage,
@@ -191,6 +191,7 @@ export class ChatService {
             replyTo: payload.replyTo,
             reactions: [],
             timestamp: new Date().toISOString(),
+            tempId: payload.tempId // Keep track of optimistic ID
         };
 
         this.io.to(subRoomName).emit('image', chatMessage);
