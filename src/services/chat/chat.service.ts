@@ -59,6 +59,7 @@ export class ChatService {
 
         socket.on('request-chat-image-upload', (payload) => this.handleRequestChatImageUpload(socket, payload));
         socket.on('image', (payload) => this.handleImage(socket, payload));
+        socket.on('audio', (payload) => this.handleAudio(socket, payload));
 
         socket.on('send_reaction', (payload) => this.handleSendReaction(socket, payload));
         socket.on('start-typing', () => this.handleStartTyping(socket));
@@ -199,6 +200,30 @@ export class ChatService {
         this.handleStopTyping(socket);
     }
 
+    private async handleAudio(socket: Socket, payload: { audioUrl: string; duration?: number; replyTo?: ReplyContext; tempId?: string }): Promise<void> {
+        const { subRoomName, username, userProfileImage } = socket.data;
+        if (!subRoomName) {
+            socket.emit('error', 'No estás en una sala');
+            return;
+        }
+
+        const chatMessage = {
+            id: crypto.randomUUID(),
+            username,
+            userProfileImage,
+            audioUrl: payload.audioUrl,
+            duration: payload.duration,
+            replyTo: payload.replyTo,
+            reactions: [],
+            timestamp: new Date().toISOString(),
+            tempId: payload.tempId
+        };
+
+        this.io.to(subRoomName).emit('audio', chatMessage);
+        await this.adapter.saveMessage(subRoomName, chatMessage);
+        this.handleStopTyping(socket);
+    }
+
     private handleSendReaction(socket: Socket, payload: { messageId: string; emoji: string }): void {
         const { subRoomName, username } = socket.data;
         if (!subRoomName) return;
@@ -230,7 +255,7 @@ export class ChatService {
 
         this.handleStopTyping(socket);
         const { totalUsersInParentRoom } = await this.adapter.leaveRoom(parentRoom, subRoomName, userId);
-        
+
         socket.to(subRoomName).emit('user-left', `${username || 'Anónimo'} ha salido de la sala.`);
         this.io.emit('user-count', { roomId: parentRoom, count: totalUsersInParentRoom });
         await this._broadcastUserList(subRoomName);
