@@ -60,6 +60,7 @@ export class ChatService {
         socket.on('request-chat-image-upload', (payload) => this.handleRequestChatImageUpload(socket, payload));
         socket.on('image', (payload) => this.handleImage(socket, payload));
         socket.on('audio', (payload) => this.handleAudio(socket, payload));
+        socket.on('gif', (payload) => this.handleGif(socket, payload));
 
         socket.on('send_reaction', (payload) => this.handleSendReaction(socket, payload));
         socket.on('start-typing', () => this.handleStartTyping(socket));
@@ -220,6 +221,28 @@ export class ChatService {
         };
 
         this.io.to(subRoomName).emit('audio', chatMessage);
+        await this.adapter.saveMessage(subRoomName, chatMessage);
+        this.handleStopTyping(socket);
+    }
+
+    private async handleGif(socket: Socket, payload: { gifUrl: string; replyTo?: ReplyContext }): Promise<void> {
+        const { subRoomName, username, userProfileImage } = socket.data;
+        if (!subRoomName) {
+            socket.emit('error', 'No estás en una sala');
+            return;
+        }
+
+        const chatMessage = {
+            id: crypto.randomUUID(),
+            username,
+            userProfileImage,
+            gifUrl: payload.gifUrl,
+            replyTo: payload.replyTo,
+            reactions: [],
+            timestamp: new Date().toISOString(),
+        };
+
+        this.io.to(subRoomName).emit('gif', chatMessage);
         await this.adapter.saveMessage(subRoomName, chatMessage);
         this.handleStopTyping(socket);
     }
