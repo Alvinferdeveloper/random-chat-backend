@@ -71,7 +71,7 @@ setupSocketHandlers(io, chatService);
 
 app.use(cors({
     origin: allowedOrigins,
-    methods: ['GET', 'POST', 'OPTIONS', 'PATCH'],
+    methods: ['GET', 'POST', 'OPTIONS', 'PATCH', "DELETE"],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));

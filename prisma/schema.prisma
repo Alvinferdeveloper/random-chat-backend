@@ -80,9 +80,24 @@ model User {
   // Relation to rooms favorited by the user
   favoriteRooms      FavoriteRoom[]
   roomActivities     UserRoomActivity[]
+  favoriteGifs       FavoriteGif[]
 
   @@unique([email])
   @@map("user")
+}
+
+model FavoriteGif {
+  id        String   @id @default(cuid())
+  userId    String
+  giphyId   String   
+  url       String   
+  title     String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, giphyId])
+  @@map("favorite_gif")
 }
 
 enum UserRole {
