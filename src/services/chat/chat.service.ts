@@ -225,7 +225,7 @@ export class ChatService {
         this.handleStopTyping(socket);
     }
 
-    private async handleGif(socket: Socket, payload: { gifUrl: string; replyTo?: ReplyContext, tempId?: string }): Promise<void> {
+    private async handleGif(socket: Socket, payload: { gifUrl: string; giphyId: string; replyTo?: ReplyContext, tempId?: string }): Promise<void> {
         const { subRoomName, username, userProfileImage } = socket.data;
         if (!subRoomName) {
             socket.emit('error', 'No estás en una sala');
@@ -237,11 +237,13 @@ export class ChatService {
             username,
             userProfileImage,
             gifUrl: payload.gifUrl,
+            giphyId: payload.giphyId,
             replyTo: payload.replyTo,
             reactions: [],
             timestamp: new Date().toISOString(),
             tempId: payload.tempId
         };
+
         this.io.to(subRoomName).emit('gif', chatMessage);
         await this.adapter.saveMessage(subRoomName, chatMessage);
         this.handleStopTyping(socket);
