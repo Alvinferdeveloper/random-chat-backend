@@ -4,7 +4,7 @@ type RateLimitHandler = ReturnType<typeof rateLimit>;
 
 export const generalLimiter: RateLimitHandler = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 200,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: {
@@ -16,7 +16,7 @@ export const generalLimiter: RateLimitHandler = rateLimit({
 
 export const authLimiter: RateLimitHandler = rateLimit({
     windowMs: 60 * 1000,
-    max: 10,
+    max: 20,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: {
@@ -48,4 +48,16 @@ export const profileUpdateLimiter: RateLimitHandler = rateLimit({
         message: "Estás realizando demasiadas actualizaciones. Reduce el ritmo."
     },
     keyGenerator: (req) => ipKeyGenerator(`profile:${req.ip}`),
+});
+
+export const listLimiter: RateLimitHandler = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 800,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Estás navegando demasiado rápido. Por favor, espera un momento."
+    },
+    keyGenerator: (req) => ipKeyGenerator(`list:${req.ip}`),
 });

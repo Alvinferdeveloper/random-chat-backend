@@ -11,7 +11,7 @@ import {
 } from "../../controllers/room.controller";
 import { asyncHandler } from '../../utils/asyncHandler';
 import { validate } from '../../middlewares/validate';
-import { createRoomLimiter } from '@/config/rateLimiters';
+import { createRoomLimiter, listLimiter } from '@/config/rateLimiters';
 import {
     getRoomsSchema,
     createRoomSchema,
@@ -26,7 +26,7 @@ import optionalSession from "../../middlewares/optionalSession";
 
 const router = Router();
 
-router.get('/', optionalSession, validate(getRoomsSchema), asyncHandler(getRooms));
+router.get('/', optionalSession, listLimiter, validate(getRoomsSchema), asyncHandler(getRooms));
 
 // Protected route to get rooms owned by the user
 router.get('/my-rooms', validateSession, asyncHandler(getUserRooms));
