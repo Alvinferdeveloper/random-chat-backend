@@ -24,12 +24,17 @@ import { generalLimiter, authLimiter } from '@/config/rateLimiters';
 import { csrfProtection } from '@/middlewares/csrfProtection';
 import healthRouter from '@/routes/v1/health.routes';
 import { setupGracefulShutdown } from '@/lib/gracefulShutdown';
+import { requestLogger } from '@/middlewares/requestLogger';
 
 const app = express();
 const allowedOrigins = JSON.parse(process.env.ALLOWED_ORIGINS || '[]');
 
 app.set('trust proxy', 1);
 app.use(helmet());
+
+// Request logger middleware
+app.use(requestLogger);
+
 app.use(generalLimiter);
 
 const server = http.createServer(app);
