@@ -1,6 +1,12 @@
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import { Request } from 'express';
 
 type RateLimitHandler = ReturnType<typeof rateLimit>;
+
+const keyGenerator = (req: Request) => {
+    if (req.user?.id) return `user:${req.user.id}`;
+    return ipKeyGenerator(req.ip || 'unknown');
+};
 
 export const generalLimiter: RateLimitHandler = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -11,7 +17,7 @@ export const generalLimiter: RateLimitHandler = rateLimit({
         success: false,
         message: "Demasiadas peticiones, por favor intenta de nuevo más tarde."
     },
-    keyGenerator: (req) => ipKeyGenerator(req.ip || 'unknown'),
+    keyGenerator,
 });
 
 export const authLimiter: RateLimitHandler = rateLimit({
@@ -23,7 +29,7 @@ export const authLimiter: RateLimitHandler = rateLimit({
         success: false,
         message: "Demasiados intentos de autenticación, por favor intenta de nuevo en 15 minutos."
     },
-    keyGenerator: (req) => ipKeyGenerator(`auth:${req.ip}`),
+    keyGenerator,
 });
 
 export const createRoomLimiter: RateLimitHandler = rateLimit({
@@ -35,7 +41,7 @@ export const createRoomLimiter: RateLimitHandler = rateLimit({
         success: false,
         message: "Has creado demasiadas salas. Intenta de nuevo en una hora."
     },
-    keyGenerator: (req) => ipKeyGenerator(`create-room:${req.ip}`),
+    keyGenerator,
 });
 
 export const profileUpdateLimiter: RateLimitHandler = rateLimit({
@@ -47,7 +53,7 @@ export const profileUpdateLimiter: RateLimitHandler = rateLimit({
         success: false,
         message: "Estás realizando demasiadas actualizaciones. Reduce el ritmo."
     },
-    keyGenerator: (req) => ipKeyGenerator(`profile:${req.ip}`),
+    keyGenerator,
 });
 
 export const listLimiter: RateLimitHandler = rateLimit({
@@ -59,5 +65,5 @@ export const listLimiter: RateLimitHandler = rateLimit({
         success: false,
         message: "Estás navegando demasiado rápido. Por favor, espera un momento."
     },
-    keyGenerator: (req) => ipKeyGenerator(`list:${req.ip}`),
+    keyGenerator,
 });
