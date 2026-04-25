@@ -1,10 +1,18 @@
 import nodemailer from 'nodemailer';
 
+const MAIL_USER = process.env.MAIL_USER;
+const MAIL_PASS = process.env.MAIL_PASS;
+const MAIL_FROM = process.env.MAIL_FROM;
+
+if (!MAIL_USER || !MAIL_PASS || !MAIL_FROM) {
+    throw new Error('Missing required email environment variables: MAIL_USER, MAIL_PASS, MAIL_FROM');
+}
+
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
+        user: MAIL_USER,
+        pass: MAIL_PASS,
     },
 });
 
@@ -21,7 +29,7 @@ interface EmailOptions {
 export const sendEmail = async (options: EmailOptions) => {
     try {
         const info = await transporter.sendMail({
-            from: `"ChatHub" <${process.env.MAIL_FROM}>`,
+            from: `"ChatHub" <${MAIL_FROM}>`,
             to: options.to,
             subject: options.subject,
             html: options.html,
