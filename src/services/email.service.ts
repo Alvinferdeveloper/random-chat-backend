@@ -4,10 +4,6 @@ const MAIL_USER = process.env.MAIL_USER;
 const MAIL_PASS = process.env.MAIL_PASS;
 const MAIL_FROM = process.env.MAIL_FROM;
 
-if (!MAIL_USER || !MAIL_PASS || !MAIL_FROM) {
-    throw new Error('Missing required email environment variables: MAIL_USER, MAIL_PASS, MAIL_FROM');
-}
-
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {

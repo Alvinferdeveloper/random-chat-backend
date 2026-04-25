@@ -121,19 +121,27 @@ function setupChatAdapter(): IChatAdapter {
 
 function setupSocketHandlers(io: Server, chatService: ChatService) {
     const socketMessageCounts = new Map<string, { count: number; resetTime: number }>();
+    
+    const RATE_LIMIT = parseInt(process.env.SOCKET_RATE_LIMIT || '20');
+    const RATE_WINDOW_MS = parseInt(process.env.SOCKET_RATE_WINDOW_MS || '60000');
+
+    const RATE_LIMITED_EVENTS = [
+    'message', 'image', 'audio', 'gif',
+    'send_message', 'join_room', 'send_reaction'
+];
 
     io.on('connection', (socket) => {
-        socketMessageCounts.set(socket.id, { count: 0, resetTime: Date.now() + 60000 });
+        socketMessageCounts.set(socket.id, { count: 0, resetTime: Date.now() + RATE_WINDOW_MS });
 
         socket.use((event, next) => {
-            if (event[0] === 'send_message' || event[0] === 'join_room') {
+            if (RATE_LIMITED_EVENTS.includes(event[0])) {
                 const clientData = socketMessageCounts.get(socket.id);
                 if (clientData) {
                     if (Date.now() > clientData.resetTime) {
                         clientData.count = 0;
-                        clientData.resetTime = Date.now() + 60000;
+                        clientData.resetTime = Date.now() + RATE_WINDOW_MS;
                     }
-                    if (clientData.count >= 20) {
+                    if (clientData.count >= RATE_LIMIT) {
                         return next(new Error('Rate limit exceeded'));
                     }
                     clientData.count++;
