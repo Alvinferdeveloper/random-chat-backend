@@ -24,7 +24,14 @@ const validateSession: RequestHandler = (
             req.user = session.user;
             next();
         })
-        .catch(() => res.status(401).json({ message: "Sesión inválida" }));
+        .catch((error) => {
+            console.error('Session validation error:', error);
+            const errorMessage = error?.message || error?.toString() || '';
+            if (errorMessage.includes('database') || errorMessage.includes('Prisma')) {
+                return res.status(503).json({ message: "Servicio temporalmente no disponible" });
+            }
+            return res.status(401).json({ message: "Sesión inválida" });
+        });
 }
 
 export default validateSession;
