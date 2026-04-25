@@ -1,10 +1,17 @@
 import { Server, Socket } from 'socket.io';
 import crypto from 'crypto';
+import sanitizeHtml from 'sanitize-html';
 import { roomExists } from '../room.service';
 import { IChatAdapter, ChatMessage } from './adapters/base.adapter';
 import * as UserRepository from '../../repositories/user.repository';
 import { supabase } from '@/lib/supabase';
 import ApiError from '@/utils/ApiError';
+
+const sanitizeOptions: sanitizeHtml.IOptions = {
+    allowedTags: ['b', 'i', 'em', 'strong', 'a'],
+    allowedAttributes: { 'a': ['href'] },
+    allowedSchemes: ['http', 'https']
+};
 
 const MAX_MESSAGES_HISTORY = parseInt(process.env.MAX_MESSAGES_HISTORY || '10', 10);
 
@@ -131,13 +138,18 @@ export class ChatService {
 
         const isObjectPayload = typeof payload === 'object' && payload !== null;
         const messageContent = isObjectPayload ? payload.message : payload;
-        const replyTo = isObjectPayload ? payload.replyTo : undefined;
+        const rawReplyTo = isObjectPayload ? payload.replyTo : undefined;
+        
+        const replyTo = rawReplyTo ? {
+            ...rawReplyTo,
+            messageSnippet: sanitizeHtml(rawReplyTo.messageSnippet, sanitizeOptions)
+        } : undefined;
 
         const chatMessage: ChatMessage = {
             id: crypto.randomUUID(),
             username,
             userProfileImage,
-            message: messageContent,
+            message: sanitizeHtml(messageContent, sanitizeOptions),
             replyTo,
             reactions: [],
             timestamp: new Date().toISOString(),
@@ -189,11 +201,11 @@ export class ChatService {
             username,
             userProfileImage,
             imageUrl: payload.imageUrl,
-            description: payload.description,
+            description: sanitizeHtml(payload.description || '', sanitizeOptions),
             replyTo: payload.replyTo,
             reactions: [],
             timestamp: new Date().toISOString(),
-            tempId: payload.tempId // Keep track of optimistic ID
+            tempId: payload.tempId
         };
 
         this.io.to(subRoomName).emit('image', chatMessage);
