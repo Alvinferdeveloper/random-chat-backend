@@ -3,6 +3,7 @@ import { Redis as RedisClient } from 'ioredis';
 
 const MAX_USERS_PER_SUBROOM = parseInt(process.env.MAX_USERS_PER_SUBROOM || '20', 10);
 const MAX_MESSAGES_HISTORY = parseInt(process.env.MAX_MESSAGES_HISTORY || '10', 10);
+const STATE_CACHE_TTL_MS = parseInt(process.env.STATE_CACHE_TTL_MS || '5000');
 
 // Lua script to join a room atomically
 // KEYS[1]: The key for the hash of the main room (e.g. 'room:general')
@@ -86,11 +87,11 @@ const leaveRoomScript = `
 
 export class RedisAdapter implements IChatAdapter {
     private redis: RedisClient;
+    private stateCache: RoomState | null = null;
+    private cacheExpiry = 0;
 
     constructor(redisClient: RedisClient) {
         this.redis = redisClient;
-        // Define los scripts en el cliente de Redis para mejorar el rendimiento
-        // (evita enviar el script completo en cada llamada)
         if (!this.redis.getBuiltinCommands().includes('joinRoomScript')) {
             this.redis.defineCommand('joinRoomScript', { numberOfKeys: 1, lua: joinRoomScript });
         }
@@ -108,20 +109,27 @@ export class RedisAdapter implements IChatAdapter {
     }
 
     public async joinRoom(parentRoom: string): Promise<JoinResult> {
+        this.stateCache = null;
         const roomKey = `room:${parentRoom}`;
         const [subRoomName, totalUsers] = await this.redisWithScripts.joinRoomScript(roomKey, MAX_USERS_PER_SUBROOM, parentRoom);
         return { subRoomName: subRoomName, totalUsersInParentRoom: totalUsers };
     }
 
     public async leaveRoom(parentRoom: string, subRoomName: string): Promise<LeaveResult> {
+        this.stateCache = null;
         const roomKey = `room:${parentRoom}`;
         const [totalUsers, roomCleaned] = await this.redisWithScripts.leaveRoomScript(roomKey, subRoomName);
         return { totalUsersInParentRoom: totalUsers, roomWasCleaned: !!roomCleaned };
     }
 
     public async getInitialState(): Promise<RoomState> {
+        const now = Date.now();
+        
+        if (this.stateCache && now < this.cacheExpiry) {
+            return this.stateCache;
+        }
+        
         const state: RoomState = {};
-        // Usamos SCAN para evitar bloquear el servidor con 'KEYS *' en producción.
         const stream = this.redis.scanStream({ match: 'room:*', count: 100 });
 
         for await (const keys of stream) {
@@ -134,7 +142,7 @@ export class RedisAdapter implements IChatAdapter {
             const results = await pipeline.exec();
 
             (results || []).forEach((res, index) => {
-                if (res[1]) { // res[0] es error, res[1] es el objeto del hash
+                if (res[1]) {
                     const roomData = res[1] as Record<string, string>;
                     const key = keys[index];
                     const parentRoomName = roomData.name || key.replace('room:', '');
@@ -152,6 +160,10 @@ export class RedisAdapter implements IChatAdapter {
                 }
             });
         }
+        
+        this.stateCache = state;
+        this.cacheExpiry = Date.now() + STATE_CACHE_TTL_MS;
+        
         return state;
     }
 
