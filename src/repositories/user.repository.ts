@@ -128,7 +128,13 @@ export const findProfileById = async (userId: string) => {
  * @param field - The name of the field to update.
  * @param value - The new value for the field.
  */
+const ALLOWED_PROFILE_FIELDS = ['username', 'bio', 'location', 'ageRange', 'conversationType', 'image', 'selected_hobbies'] as const;
+
 export const updateProfileAttribute = (userId: string, field: string, value: any) => {
+    if (!ALLOWED_PROFILE_FIELDS.includes(field as typeof ALLOWED_PROFILE_FIELDS[number])) {
+        throw new ApiError(400, `Field '${field}' is not allowed for update.`);
+    }
+
     try {
         let data: any = {};
 
@@ -136,6 +142,10 @@ export const updateProfileAttribute = (userId: string, field: string, value: any
             data.hobbies = {
                 set: (value as string[]).map(id => ({ id }))
             };
+        } else if (field === 'ageRange') {
+            data.ageRange = value as AgeRange;
+        } else if (field === 'conversationType') {
+            data.conversationType = value as ConversationType;
         } else {
             data[field] = value;
         }
