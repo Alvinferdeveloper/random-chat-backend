@@ -13,6 +13,25 @@ const sanitizeOptions: sanitizeHtml.IOptions = {
     allowedSchemes: ['http', 'https']
 };
 
+const ALLOWED_MEDIA_DOMAINS = [
+    'storage.googleapis.com',
+    'supabase.co',
+    'media4.giphy.com',
+    'i.giphy.com'
+];
+
+const isValidMediaUrl = (url: string): boolean => {
+    try {
+        const parsed = new URL(url);
+        if (!['http:', 'https:'].includes(parsed.protocol)) return false;
+        return ALLOWED_MEDIA_DOMAINS.some(domain =>
+            parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`)
+        );
+    } catch {
+        return false;
+    }
+};
+
 const MAX_MESSAGES_HISTORY = parseInt(process.env.MAX_MESSAGES_HISTORY || '10', 10);
 
 interface ReplyContext {
@@ -139,7 +158,7 @@ export class ChatService {
         const isObjectPayload = typeof payload === 'object' && payload !== null;
         const messageContent = isObjectPayload ? payload.message : payload;
         const rawReplyTo = isObjectPayload ? payload.replyTo : undefined;
-        
+
         const replyTo = rawReplyTo ? {
             ...rawReplyTo,
             messageSnippet: sanitizeHtml(rawReplyTo.messageSnippet, sanitizeOptions)
@@ -196,6 +215,11 @@ export class ChatService {
             return;
         }
 
+        if (!isValidMediaUrl(payload.imageUrl)) {
+            socket.emit('error', 'URL de imagen no permitida');
+            return;
+        }
+
         const chatMessage = {
             id: crypto.randomUUID(),
             username,
@@ -220,6 +244,11 @@ export class ChatService {
             return;
         }
 
+        if (!isValidMediaUrl(payload.audioUrl)) {
+            socket.emit('error', 'URL de audio no permitida');
+            return;
+        }
+
         const chatMessage = {
             id: crypto.randomUUID(),
             username,
@@ -241,6 +270,11 @@ export class ChatService {
         const { subRoomName, username, userProfileImage } = socket.data;
         if (!subRoomName) {
             socket.emit('error', 'No estás en una sala');
+            return;
+        }
+
+        if (!isValidMediaUrl(payload.gifUrl)) {
+            socket.emit('error', 'URL de GIF no permitida');
             return;
         }
 
