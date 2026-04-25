@@ -13,22 +13,25 @@ type InMemoryRoomValue = {
     nextSubRoomIndex: number;
 };
 
-const roomState: Record<string, InMemoryRoomValue> = {};
-const messageHistory: Record<string, ChatMessage[]> = {};
-
-/**
- * An in-memory implementation of the IChatAdapter.
- * It uses a simple JavaScript object to store the chat state.
- * This is suitable for MVP/development but not for a scalable production environment.
- */
 export class InMemoryAdapter implements IChatAdapter {
+    private roomState: Record<string, InMemoryRoomValue> = {};
+    private messageHistory: Record<string, ChatMessage[]> = {};
+
+    private static instance: InMemoryAdapter | null = null;
+
+    public static getInstance(): InMemoryAdapter {
+        if (!InMemoryAdapter.instance) {
+            InMemoryAdapter.instance = new InMemoryAdapter();
+        }
+        return InMemoryAdapter.instance;
+    }
 
     public async joinRoom(parentRoom: string, userId: string): Promise<JoinResult> {
-        if (!roomState[parentRoom]) {
-            roomState[parentRoom] = { subRooms: [], nextSubRoomIndex: 1 };
+        if (!this.roomState[parentRoom]) {
+            this.roomState[parentRoom] = { subRooms: [], nextSubRoomIndex: 1 };
         }
 
-        const room = roomState[parentRoom];
+        const room = this.roomState[parentRoom];
 
         // 1. Priority: Find a sub-room where the user is ALREADY present (Room Affinity)
         // We ignore the MAX_USERS_PER_SUBROOM limit if the user is already there.
@@ -56,7 +59,7 @@ export class InMemoryAdapter implements IChatAdapter {
     }
 
     public async leaveRoom(parentRoom: string, subRoomName: string, userId: string): Promise<LeaveResult> {
-        const room = roomState[parentRoom];
+        const room = this.roomState[parentRoom];
         if (!room) {
             return { totalUsersInParentRoom: 0, roomWasCleaned: false };
         }
@@ -80,7 +83,7 @@ export class InMemoryAdapter implements IChatAdapter {
         // If there are no sub-rooms left, clean up the parent room entry
         const roomWasCleaned = room.subRooms.length === 0;
         if (roomWasCleaned) {
-            delete roomState[parentRoom];
+            delete this.roomState[parentRoom];
         }
 
         return { totalUsersInParentRoom, roomWasCleaned };
@@ -88,35 +91,36 @@ export class InMemoryAdapter implements IChatAdapter {
 
     public async getInitialState(): Promise<RoomState> {
         const state: RoomState = {};
-        for (const roomName in roomState) {
+        for (const roomName in this.roomState) {
             state[roomName] = {
-                userCount: roomState[roomName].subRooms.reduce((acc, sr) => acc + Object.keys(sr.users).length, 0),
+                userCount: this.roomState[roomName].subRooms.reduce((acc, sr) => acc + Object.keys(sr.users).length, 0),
             };
         }
         return state;
     }
 
     public async saveMessage(subRoomName: string, message: ChatMessage): Promise<void> {
-        if (!messageHistory[subRoomName]) {
-            messageHistory[subRoomName] = [];
+        if (!this.messageHistory[subRoomName]) {
+            this.messageHistory[subRoomName] = [];
         }
-        messageHistory[subRoomName].push(message);
-        if (messageHistory[subRoomName].length > MAX_MESSAGES_HISTORY) {
-            messageHistory[subRoomName].shift();
+        this.messageHistory[subRoomName].push(message);
+        if (this.messageHistory[subRoomName].length > MAX_MESSAGES_HISTORY) {
+            this.messageHistory[subRoomName].shift();
         }
     }
 
     public async getRecentMessages(subRoomName: string, limit: number): Promise<ChatMessage[]> {
-        const messages = messageHistory[subRoomName] || [];
+        const messages = this.messageHistory[subRoomName] || [];
         return messages.slice(0, limit);
     }
 
     public static getActiveUsersCounts(roomIds: string[]): Record<string, number> {
+        const instance = InMemoryAdapter.getInstance();
         const result: Record<string, number> = {};
         for (const roomId of roomIds) {
-            const room = roomState[roomId];
+            const room = instance.roomState[roomId];
             if (room) {
-                result[roomId] = room.subRooms.reduce((sum, sr) => sum + Object.keys(sr.users).length, 0);
+                result[roomId] = room.subRooms.reduce((sum: number, sr: InMemorySubRoom) => sum + Object.keys(sr.users).length, 0);
             } else {
                 result[roomId] = 0;
             }
@@ -125,9 +129,10 @@ export class InMemoryAdapter implements IChatAdapter {
     }
 
     public static getAllActiveUsersCounts(): Record<string, number> {
+        const instance = InMemoryAdapter.getInstance();
         const result: Record<string, number> = {};
-        for (const roomName in roomState) {
-            result[roomName] = roomState[roomName].subRooms.reduce((acc, sr) => acc + Object.keys(sr.users).length, 0);
+        for (const roomName in instance.roomState) {
+            result[roomName] = instance.roomState[roomName].subRooms.reduce((acc: number, sr: InMemorySubRoom) => acc + Object.keys(sr.users).length, 0);
         }
         return result;
     }
