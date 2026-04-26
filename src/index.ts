@@ -88,8 +88,8 @@ app.all("/api/auth/{*any}", authLimiter, toNodeHandler(auth));
 app.use(express.json());
 app.use('/api/v1/rooms', roomRouter);
 app.use('/api/v1/admin', adminRouter);
-app.use(validateSession);
 app.use('/api/v1/users', userRouter);
+app.use(validateSession);
 app.use('/api/v1/hobbies', hobbyRouter);
 app.use('/api/v1/health', healthRouter);
 
@@ -121,14 +121,14 @@ function setupChatAdapter(): IChatAdapter {
 
 function setupSocketHandlers(io: Server, chatService: ChatService) {
     const socketMessageCounts = new Map<string, { count: number; resetTime: number }>();
-    
+
     const RATE_LIMIT = parseInt(process.env.SOCKET_RATE_LIMIT || '20');
     const RATE_WINDOW_MS = parseInt(process.env.SOCKET_RATE_WINDOW_MS || '60000');
 
     const RATE_LIMITED_EVENTS = [
-    'message', 'image', 'audio', 'gif',
-    'send_message', 'join_room', 'send_reaction'
-];
+        'message', 'image', 'audio', 'gif',
+        'send_message', 'join_room', 'send_reaction'
+    ];
 
     io.on('connection', (socket) => {
         socketMessageCounts.set(socket.id, { count: 0, resetTime: Date.now() + RATE_WINDOW_MS });

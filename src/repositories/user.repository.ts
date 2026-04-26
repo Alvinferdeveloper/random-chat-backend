@@ -84,6 +84,46 @@ export const findByUsername = async (username: string) => {
 }
 
 /**
+ * Finds a user's full profile by their username.
+ * @param username - The username of the user.
+ * @returns The user's profile data.
+ * @throws {ApiError} If the user is not found.
+ */
+export const findProfileByUsername = async (username: string) => {
+    console.log(username);
+    try {
+        const userProfile = await prisma.user.findUnique({
+            where: { username },
+            select: {
+                id: true,
+                username: true,
+                image: true,
+                bio: true,
+                location: true,
+                ageRange: true,
+                conversationType: true,
+                hobbies: {
+                    select: {
+                        id: true,
+                        name: true,
+                        icon: true,
+                    }
+                }
+            }
+        });
+
+        if (!userProfile) {
+            throw new ApiError(404, 'Perfil de usuario no encontrado.');
+        }
+        return userProfile;
+    } catch (error) {
+        if (error instanceof ApiError) throw error;
+        console.error(`Error fetching user profile for username ${username}:`, error);
+        throw new ApiError(500, 'Error interno del servidor al obtener el perfil.');
+    }
+};
+
+/**
  * Finds a user's full profile by their ID.
  * @param userId - The ID of the user.
  * @returns The user's profile data.

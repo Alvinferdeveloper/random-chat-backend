@@ -10,7 +10,7 @@ export const auth = betterAuth({
     }),
 
     cookiePrefix: 'random-chat',
-    
+
     advanced: {
         cookiePrefix: 'random-chat',
     },
@@ -44,6 +44,7 @@ export const auth = betterAuth({
                 user: {
                     ...user,
                     isCompleteProfile: !!userDoc?.username,
+                    username: userDoc?.username,
                     role: userDoc?.role
                 },
                 session

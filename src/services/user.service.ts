@@ -19,6 +19,15 @@ export const getUserProfile = async (userId: string) => {
 };
 
 /**
+ * Retrieves a user's public profile by username.
+ * @param username - The username of the user to retrieve.
+ * @returns The user's profile data.
+ */
+export const getUserProfileByUsername = async (username: string) => {
+    return UserRepository.findProfileByUsername(username);
+};
+
+/**
  * Updates a single attribute of a user's profile.
  * @param userId - The ID of the user.
  * @param field - The name of the field to update.

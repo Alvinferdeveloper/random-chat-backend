@@ -32,6 +32,13 @@ export const getUserProfile = async (req: Request, res: Response) => {
     res.status(200).json({ success: true, user: userProfile });
 };
 
+export const getUserProfileByUsername = async (req: Request, res: Response) => {
+    const { username } = req.params;
+    const decodedUsername = decodeURIComponent(username);
+    const userProfile = await UserService.getUserProfileByUsername(decodedUsername);
+    res.status(200).json({ success: true, user: userProfile });
+};
+
 export const updateUserProfile = async (req: Request, res: Response) => {
     const user = req.user;
     if (!user) {

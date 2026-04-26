@@ -106,7 +106,6 @@ export class ChatService {
         }
 
         const userId = socket.data.user?.id || clientUsername;
-
         const { subRoomName, totalUsersInParentRoom } = await this.adapter.joinRoom(parentRoom, userId);
         await socket.join(subRoomName);
 
@@ -115,7 +114,7 @@ export class ChatService {
 
         if (socket.data.user) {
             const sessionUser = socket.data.user;
-            finalUsername = sessionUser.name;
+            finalUsername = sessionUser.username;
             userProfileImage = await UserRepository.findImageById(sessionUser.id);
         }
 
