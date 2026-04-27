@@ -122,7 +122,7 @@ export const generateRoomUploadUrl = async (roomId: string, type: 'banner' | 'ic
 
     if (uploadError) {
         console.error('Supabase createSignedUploadUrl error:', uploadError);
-        throw new ApiError(500, 'Error al generar la URL de subida pre-firmada.');
+        return null;
     }
 
     const { data: publicUrlData } = supabase.storage
@@ -130,7 +130,7 @@ export const generateRoomUploadUrl = async (roomId: string, type: 'banner' | 'ic
         .getPublicUrl(filePath);
 
     if (!publicUrlData) {
-        throw new ApiError(500, 'Error al obtener la URL pública de la imagen.');
+        return null;
     }
 
     return {

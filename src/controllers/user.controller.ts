@@ -61,10 +61,11 @@ export const generateProfileUploadUrl = async (req: Request, res: Response) => {
 
     const { fileName } = req.body;
 
-    const { signedUploadUrl, publicUrl } = await UserService.generateProfileUploadUrl(
-        user.id,
-        fileName,
-    );
+    const urls = await UserService.generateProfileUploadUrl(user.id, fileName);
 
-    res.status(200).json({ signedUploadUrl, publicUrl });
+    if (!urls) {
+        throw new ApiError(503, 'Storage service unavailable.');
+    }
+
+    res.status(200).json(urls);
 };

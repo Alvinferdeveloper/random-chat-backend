@@ -39,6 +39,10 @@ export const generateRoomUploadUrl = async (req: Request, res: Response) => {
 
     const urls = await RoomService.generateRoomUploadUrl(roomId, type, contentType, user.id);
 
+    if (!urls) {
+        throw new ApiError(503, 'Storage service unavailable.');
+    }
+
     res.status(200).json(urls);
 };
 

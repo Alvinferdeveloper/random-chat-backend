@@ -192,7 +192,11 @@ export class ChatService {
                 .from(bucketName)
                 .createSignedUploadUrl(filePath, { upsert: false });
 
-            if (error) throw new ApiError(500, 'Error al generar la URL de subida pre-firmada.');
+            if (error) {
+                console.error('Supabase createSignedUploadUrl error:', error);
+                socket.emit('error', 'No se pudo procesar la subida de la imagen.');
+                return;
+            }
 
             const { data: publicUrlData } = supabase.storage.from(bucketName).getPublicUrl(filePath);
 
