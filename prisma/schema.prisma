@@ -25,6 +25,11 @@ model Room {
   
   favoritedBy FavoriteRoom[]
   userActivities UserRoomActivity[]
+
+  @@index([deletedAt, status])
+  @@index([status, deletedAt, created_at])
+  @@index([normalized_name])
+  @@index([created_at])
 }
 
 enum RoomStatus {
@@ -55,6 +60,8 @@ model UserRoomActivity {
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roomId])
+  @@index([userId, lastInteraction])
+  @@index([roomId, lastInteraction])
   @@map("user_room_activity")
 }
 
