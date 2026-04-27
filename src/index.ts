@@ -124,11 +124,23 @@ function setupSocketHandlers(io: Server, chatService: ChatService) {
 
     const RATE_LIMIT = parseInt(process.env.SOCKET_RATE_LIMIT || '20');
     const RATE_WINDOW_MS = parseInt(process.env.SOCKET_RATE_WINDOW_MS || '60000');
+    const CLEANUP_INTERVAL_MS = 60000;
 
     const RATE_LIMITED_EVENTS = [
         'message', 'image', 'audio', 'gif',
         'send_message', 'join_room', 'send_reaction'
     ];
+
+    // Cleanup old entries periodically
+    const cleanup = () => {
+        const now = Date.now();
+        for (const [socketId, data] of socketMessageCounts.entries()) {
+            if (now > data.resetTime + RATE_WINDOW_MS) {
+                socketMessageCounts.delete(socketId);
+            }
+        }
+    };
+    setInterval(cleanup, CLEANUP_INTERVAL_MS);
 
     io.on('connection', (socket) => {
         socketMessageCounts.set(socket.id, { count: 0, resetTime: Date.now() + RATE_WINDOW_MS });
