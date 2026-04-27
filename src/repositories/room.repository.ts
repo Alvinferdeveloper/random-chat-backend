@@ -3,6 +3,7 @@ import ApiError from '../utils/ApiError';
 import { Room } from '@prisma/client';
 import { getRoomsWithActivity } from './user-room-activity.repository';
 import { getMultipleActiveUsersCounts } from '../services/room-active-users.service';
+import logger from '../lib/logger';
 
 const RECENCY_WEIGHT = 0.6;
 const POPULARITY_WEIGHT = 0.4;
@@ -208,7 +209,7 @@ export const create = async (roomData: Omit<Room, 'id' | 'created_at' | 'deleted
         });
         return newRoom;
     } catch (error) {
-        console.error('Error creating room:', error);
+        logger.error('Error creating room', { error: (error as Error).message });
         throw new ApiError(500, 'Error al crear la nueva sala.');
     }
 };

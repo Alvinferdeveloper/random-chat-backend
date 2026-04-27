@@ -3,6 +3,7 @@ import * as HobbyRepository from '../repositories/hobby.repository';
 import { ProfileInfo } from '@/types/user';
 import ApiError from '../utils/ApiError';
 import { supabase } from '@/lib/supabase';
+import logger from '@/lib/logger';
 
 export const completeUserProfile = async (userId: string, profileInfo: ProfileInfo) => {
     const updatedUser = await UserRepository.updateUserProfile(userId, profileInfo);
@@ -70,7 +71,7 @@ export const generateProfileUploadUrl = async (userId: string, fileName: string)
         });
 
     if (uploadError) {
-        console.error('Supabase createSignedUploadUrl error:', uploadError);
+        logger.error('Supabase createSignedUploadUrl error', { error: uploadError.message });
         return null;
     }
 

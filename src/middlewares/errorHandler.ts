@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import ApiError from '../utils/ApiError';
+import logger from '../lib/logger';
 
 const errorHandler = (err: Error, _req: Request, res: Response, _next: NextFunction) => {
     let statusCode = 500;
@@ -9,7 +10,7 @@ const errorHandler = (err: Error, _req: Request, res: Response, _next: NextFunct
         statusCode = err.statusCode;
         message = err.message;
     } else {
-        console.error('ERROR NO CONTROLADO:', err);
+        logger.error('Unhandled error', { error: err.message, stack: err.stack });
     }
 
     res.status(statusCode).json({

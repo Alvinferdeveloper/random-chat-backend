@@ -2,24 +2,25 @@ import { Server } from 'socket.io';
 import http from 'http';
 import prisma from '@/lib/prisma';
 import { getRedisClient } from '@/lib/redis';
+import logger from './logger';
 
 export function setupGracefulShutdown(server: http.Server, io: Server) {
     const shutdown = async (signal: string) => {
-        console.log(`\n${signal} received. Starting graceful shutdown...`);
+        logger.info(`Graceful shutdown initiated`, { signal });
 
         server.close(async () => {
-            console.log('HTTP server closed');
+            logger.info('HTTP server closed');
 
             io.close(() => {
-                console.log('Socket.io server closed');
+                logger.info('Socket.io server closed');
 
                 prisma.$disconnect()
                     .then(() => {
-                        console.log('Prisma disconnected');
+                        logger.info('Prisma disconnected');
                         const redisClient = getRedisClient();
                         if (redisClient) {
                             redisClient.quit().then(() => {
-                                console.log('Redis connection closed');
+                                logger.info('Redis connection closed');
                                 process.exit(0);
                             });
                         } else {
@@ -27,14 +28,14 @@ export function setupGracefulShutdown(server: http.Server, io: Server) {
                         }
                     })
                     .catch((err) => {
-                        console.error('Error disconnecting Prisma:', err);
+                        logger.error('Error disconnecting Prisma', { error: err.message });
                         process.exit(1);
                     });
             });
         });
 
         setTimeout(() => {
-            console.error('Forced shutdown after timeout');
+            logger.error('Forced shutdown after timeout');
             process.exit(1);
         }, 10000);
     };

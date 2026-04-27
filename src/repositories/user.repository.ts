@@ -2,6 +2,7 @@ import prisma from '../lib/prisma';
 import ApiError from '../utils/ApiError';
 import { AgeRange, ConversationType } from '@prisma/client'
 import { ProfileInfo } from '@/types/user';
+import logger from '../lib/logger';
 
 /**
  * Updates a user's profile information.
@@ -46,7 +47,7 @@ export async function updateUserProfile(userId: string, profileInfo: ProfileInfo
         });
         return updatedUser;
     } catch (error) {
-        console.log(error)
+        logger.debug('Error', { error: (error as Error).message });
         throw new ApiError(500, 'Internal server errore.');
     }
 }
@@ -65,7 +66,7 @@ export const findImageById = async (userId: string): Promise<string | null> => {
         return user?.image ?? null;
     } catch (error) {
         // Log the error but don't crash the chat flow
-        console.error(`Error fetching user image for userId ${userId}:`, error);
+        logger.error('Error fetching user image', { userId, error: (error as Error).message });
         return null;
     }
 };
@@ -90,7 +91,7 @@ export const findByUsername = async (username: string) => {
  * @throws {ApiError} If the user is not found.
  */
 export const findProfileByUsername = async (username: string) => {
-    console.log(username);
+    logger.debug('Username lookup', { username });
     try {
         const userProfile = await prisma.user.findUnique({
             where: { username },
@@ -118,7 +119,7 @@ export const findProfileByUsername = async (username: string) => {
         return userProfile;
     } catch (error) {
         if (error instanceof ApiError) throw error;
-        console.error(`Error fetching user profile for username ${username}:`, error);
+        logger.error('Error fetching user profile for username', { username, error: (error as Error).message });
         throw new ApiError(500, 'Error interno del servidor al obtener el perfil.');
     }
 };
@@ -157,7 +158,7 @@ export const findProfileById = async (userId: string) => {
         return userProfile;
     } catch (error) {
         if (error instanceof ApiError) throw error;
-        console.error(`Error fetching user profile for userId ${userId}:`, error);
+        logger.error('Error fetching user profile', { userId, error: (error as Error).message });
         throw new ApiError(500, 'Error interno del servidor al obtener el perfil.');
     }
 };
@@ -198,7 +199,7 @@ export const updateProfileAttribute = (userId: string, field: string, value: any
             }
         });
     } catch (error) {
-        console.error(`Error updating [${field}] for userId ${userId}:`, error);
+        logger.error('Error updating user field', { userId, field, error: (error as Error).message });
         throw new ApiError(500, `No se pudo actualizar el campo ${field}.`);
     }
 }

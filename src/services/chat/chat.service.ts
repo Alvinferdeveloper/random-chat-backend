@@ -6,6 +6,7 @@ import { IChatAdapter, ChatMessage } from './adapters/base.adapter';
 import * as UserRepository from '../../repositories/user.repository';
 import { supabase } from '@/lib/supabase';
 import ApiError from '@/utils/ApiError';
+import logger from '@/lib/logger';
 
 const sanitizeOptions: sanitizeHtml.IOptions = {
     allowedTags: ['b', 'i', 'em', 'strong', 'a'],
@@ -73,7 +74,7 @@ export class ChatService {
             const userList = Array.from(uniqueUsers.values());
             this.io.to(subRoomName).emit('room_users', userList);
         } catch (error) {
-            console.error(`Error broadcasting user list for room ${subRoomName}:`, error);
+            logger.error('Error broadcasting user list for room', { subRoomName, error: (error as Error).message });
         }
     }
 
@@ -193,7 +194,7 @@ export class ChatService {
                 .createSignedUploadUrl(filePath, { upsert: false });
 
             if (error) {
-                console.error('Supabase createSignedUploadUrl error:', error);
+                logger.error('Supabase createSignedUploadUrl error', { error: (error as Error).message });
                 socket.emit('error', 'No se pudo procesar la subida de la imagen.');
                 return;
             }
@@ -206,7 +207,7 @@ export class ChatService {
                 publicUrl: publicUrlData.publicUrl,
             });
         } catch (error) {
-            console.error('Error handling request for chat image upload:', error);
+            logger.error('Error handling request for chat image upload', { error: (error as Error).message });
             socket.emit('error', 'No se pudo procesar la subida de la imagen.');
         }
     }

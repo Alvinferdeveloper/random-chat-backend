@@ -3,6 +3,7 @@ import ApiError from '../utils/ApiError';
 import { Room } from '@prisma/client';
 import { getRedisClient } from '../lib/redis';
 import { supabase } from '../lib/supabase';
+import logger from '../lib/logger';
 
 /**
  * Normalizes a string for similarity comparison.
@@ -121,7 +122,7 @@ export const generateRoomUploadUrl = async (roomId: string, type: 'banner' | 'ic
         });
 
     if (uploadError) {
-        console.error('Supabase createSignedUploadUrl error:', uploadError);
+        logger.error('Supabase createSignedUploadUrl error', { error: uploadError.message });
         return null;
     }
 

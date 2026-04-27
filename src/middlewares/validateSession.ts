@@ -1,5 +1,6 @@
 import { RequestHandler } from "express";
 import { auth } from "../lib/auth";
+import logger from "../lib/logger";
 
 const validateSession: RequestHandler = (
     req,
@@ -11,7 +12,7 @@ const validateSession: RequestHandler = (
         if (typeof value === "string") {
             headers.append(key, value);
         } else if (Array.isArray(value)) {
-            value.forEach((v) => headers.append(key, v));
+            value.forEach((v: string) => headers.append(key, v));
         }
     });
 
@@ -25,7 +26,7 @@ const validateSession: RequestHandler = (
             next();
         })
         .catch((error) => {
-            console.error('Session validation error:', error);
+            logger.error('Session validation error', { error: error.message });
             const errorMessage = error?.message || error?.toString() || '';
             if (errorMessage.includes('database') || errorMessage.includes('Prisma')) {
                 return res.status(503).json({ message: "Servicio temporalmente no disponible" });

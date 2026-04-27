@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import logger from '../lib/logger';
 
 const MAIL_USER = process.env.MAIL_USER;
 const MAIL_PASS = process.env.MAIL_PASS;
@@ -18,10 +19,6 @@ interface EmailOptions {
     html: string;
 }
 
-/**
- * Envía un correo electrónico utilizando el transportador configurado.
- * @param options - Las opciones del correo: destinatario, asunto y contenido HTML.
- */
 export const sendEmail = async (options: EmailOptions) => {
     try {
         const info = await transporter.sendMail({
@@ -30,9 +27,9 @@ export const sendEmail = async (options: EmailOptions) => {
             subject: options.subject,
             html: options.html,
         });
-        console.log('Correo de verificación enviado a: %s', options.to);
+        logger.info('Verification email sent', { to: options.to });
     } catch (error) {
-        console.error('Error al enviar el correo:', error);
+        logger.error('Error sending email', { error: (error as Error).message });
         throw new Error('No se pudo enviar el correo de verificación.');
     }
 };

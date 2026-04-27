@@ -1,6 +1,7 @@
 import prisma from '../lib/prisma';
 import ApiError from '../utils/ApiError';
 import { Hobby } from '@prisma/client';
+import logger from '../lib/logger';
 
 /**
  * Retrieves all hobbies from the database, ordered by name.
@@ -37,7 +38,7 @@ export const hobbiesExist = async (hobbyIds: string[]): Promise<boolean> => {
         });
         return count === hobbyIds.length;
     } catch (error) {
-        console.error('Error validating hobby IDs:', error);
+        logger.error('Error validating hobby IDs', { error: (error as Error).message });
         return false;
     }
 };

@@ -1,11 +1,12 @@
 import { Request, Response } from 'express';
 import * as UserService from '../services/user.service';
 import ApiError from '../utils/ApiError';
+import logger from '../lib/logger';
 
 export const completeUserProfile = async (req: Request, res: Response) => {
     const user = req.user;
     const profileData = req.body
-    console.log(profileData)
+    logger.debug('Completing user profile', { userId: user?.id });
     await UserService.completeUserProfile(user?.id as string, profileData);
 
     res.status(200).json({ success: true, message: 'Perfil actualizado' });

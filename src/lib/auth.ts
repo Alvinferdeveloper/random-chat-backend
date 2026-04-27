@@ -3,6 +3,7 @@ import { customSession } from 'better-auth/plugins'
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "./prisma";
 import { sendVerificationEmail } from '../services/email.service';
+import logger from './logger';
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
@@ -21,7 +22,7 @@ export const auth = betterAuth({
     },
     emailVerification: {
         sendVerificationEmail: async ({ user, url }) => {
-            console.log(url)
+            logger.debug('Verification URL generated', { email: user.email });
             await sendVerificationEmail(user.email, url);
         },
     },

@@ -1,4 +1,5 @@
 import Redis, { Redis as RedisClient } from 'ioredis';
+import logger from './logger';
 
 let redisClient: RedisClient | null = null;
 
@@ -10,26 +11,21 @@ export const isRedisActive = (): boolean => {
     return isRedisEnabled();
 };
 
-/**
- * Gets a singleton instance of the Redis client.
- * The client is created only on the first call.
- * Subsequent calls will return the existing instance.
- */
 export const getRedisClient = (): RedisClient | null => {
     if (!isRedisEnabled()) {
         return null;
     }
 
     if (!redisClient) {
-        console.log('Creating new Redis client instance...');
+        logger.info('Creating new Redis client instance...');
         redisClient = new Redis(process.env.REDIS_URL!);
 
         redisClient.on('connect', () => {
-            console.log('Redis client connected');
+            logger.info('Redis client connected');
         });
 
         redisClient.on('error', (err) => {
-            console.error('Redis client connection error:', err);
+            logger.error('Redis client connection error', { error: err.message });
         });
     }
     return redisClient;

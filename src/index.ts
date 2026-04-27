@@ -1,4 +1,5 @@
 import express from 'express';
+import logger from './lib/logger';
 import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
@@ -97,7 +98,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-    console.log(`Servidor escuchando en puerto ${PORT}`);
+    logger.info(`Servidor escuchando en puerto ${PORT}`);
 });
 
 setupGracefulShutdown(server, io);
@@ -115,7 +116,7 @@ function setupChatAdapter(): IChatAdapter {
             return redisAdapter;
         }
     }
-    console.warn('Redis unavailable, falling back to InMemory');
+    logger.warn('Redis unavailable, falling back to InMemory');
     return new InMemoryAdapter();
 }
 
