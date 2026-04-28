@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as UserService from '../services/user.service';
-import ApiError from '../utils/ApiError';
+import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 import logger from '../lib/logger';
 
 export const completeUserProfile = async (req: Request, res: Response) => {
@@ -17,7 +17,7 @@ export const getUserSession = async (req: Request, res: Response) => {
     const user = req.user;
 
     if (!user) {
-        throw new ApiError(401, 'Usuario no autenticado.');
+        throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
     }
 
     res.status(200).json({ isAuthenticated: true, user });
@@ -26,7 +26,7 @@ export const getUserSession = async (req: Request, res: Response) => {
 export const getUserProfile = async (req: Request, res: Response) => {
     const user = req.user;
     if (!user) {
-        throw new ApiError(401, 'Usuario no autenticado.');
+        throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
     }
 
     const userProfile = await UserService.getUserProfile(user.id);
@@ -43,7 +43,7 @@ export const getUserProfileByUsername = async (req: Request, res: Response) => {
 export const updateUserProfile = async (req: Request, res: Response) => {
     const user = req.user;
     if (!user) {
-        throw new ApiError(401, 'Usuario no autenticado.');
+        throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
     }
 
     const fieldToUpdate = Object.keys(req.body)[0];
@@ -57,7 +57,7 @@ export const updateUserProfile = async (req: Request, res: Response) => {
 export const generateProfileUploadUrl = async (req: Request, res: Response) => {
     const user = req.user;
     if (!user) {
-        throw new ApiError(401, 'Usuario no autenticado.');
+        throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
     }
 
     const { fileName } = req.body;
@@ -65,7 +65,7 @@ export const generateProfileUploadUrl = async (req: Request, res: Response) => {
     const urls = await UserService.generateProfileUploadUrl(user.id, fileName);
 
     if (!urls) {
-        throw new ApiError(503, 'Storage service unavailable.');
+        throw new ApiError(503, ERROR_MESSAGES.STORAGE_UNAVAILABLE);
     }
 
     res.status(200).json(urls);

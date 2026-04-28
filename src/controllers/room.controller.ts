@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import * as RoomService from '../services/room.service';
 import { recordActivity } from '../repositories/user-room-activity.repository';
-import ApiError from '../utils/ApiError';
+import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 
 export const getRooms = async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
@@ -9,8 +9,11 @@ export const getRooms = async (req: Request, res: Response) => {
     const search = req.query.q as string | undefined;
     const userId = req.user?.id; // Optional: used to include 'isFavorite' status
 
-    if (page < 1 || limit < 1) {
-        return res.status(400).json({ success: false, message: 'Los parámetros de paginación deben ser números positivos.' });
+    if (page < 1) {
+        throw new ApiError(400, ERROR_MESSAGES.INVALID_PAGE);
+    }
+    if (limit < 1 || limit > 100) {
+        throw new ApiError(400, ERROR_MESSAGES.INVALID_LIMIT);
     }
 
     const paginatedData = await RoomService.getAllRooms(page, limit, search, userId);
@@ -20,7 +23,7 @@ export const getRooms = async (req: Request, res: Response) => {
 export const createRoom = async (req: Request, res: Response) => {
     const user = req.user;
     if (!user || !user.id) {
-        throw new ApiError(401, 'Usuario no autenticado para crear sala.');
+        throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
     }
 
     const roomData = req.body;
@@ -31,7 +34,7 @@ export const createRoom = async (req: Request, res: Response) => {
 export const generateRoomUploadUrl = async (req: Request, res: Response) => {
     const user = req.user;
     if (!user || !user.id) {
-        throw new ApiError(401, 'Usuario no autenticado.');
+        throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
     }
 
     const { roomId } = req.params;
@@ -40,7 +43,7 @@ export const generateRoomUploadUrl = async (req: Request, res: Response) => {
     const urls = await RoomService.generateRoomUploadUrl(roomId, type, contentType, user.id);
 
     if (!urls) {
-        throw new ApiError(503, 'Storage service unavailable.');
+        throw new ApiError(503, ERROR_MESSAGES.STORAGE_UNAVAILABLE);
     }
 
     res.status(200).json(urls);
@@ -49,7 +52,7 @@ export const generateRoomUploadUrl = async (req: Request, res: Response) => {
 export const updateRoom = async (req: Request, res: Response) => {
     const user = req.user;
     if (!user || !user.id) {
-        throw new ApiError(401, 'Usuario no autenticado.');
+        throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
     }
 
     const { roomId } = req.params;
@@ -64,7 +67,7 @@ export const updateRoom = async (req: Request, res: Response) => {
 export const getUserRooms = async (req: Request, res: Response) => {
     const user = req.user;
     if (!user || !user.id) {
-        throw new ApiError(401, 'Usuario no autenticado.');
+        throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
     }
 
     const rooms = await RoomService.getUserRooms(user.id);
@@ -76,7 +79,7 @@ export const getUserRooms = async (req: Request, res: Response) => {
  */
 export const toggleFavoriteRoom = async (req: Request, res: Response) => {
     const user = req.user;
-    if (!user || !user.id) throw new ApiError(401, 'Usuario no autenticado.');
+    if (!user || !user.id) throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
 
     const { roomId } = req.params;
     const isFavorite = await RoomService.toggleFavoriteRoom(user.id, roomId);
@@ -93,14 +96,17 @@ export const toggleFavoriteRoom = async (req: Request, res: Response) => {
  */
 export const getUserFavoriteRooms = async (req: Request, res: Response) => {
     const user = req.user;
-    if (!user || !user.id) throw new ApiError(401, 'Usuario no autenticado.');
+    if (!user || !user.id) throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const search = req.query.q as string | undefined;
 
-    if (page < 1 || limit < 1) {
-        return res.status(400).json({ success: false, message: 'Parámetros de paginación inválidos.' });
+    if (page < 1) {
+        throw new ApiError(400, ERROR_MESSAGES.INVALID_PAGE);
+    }
+    if (limit < 1 || limit > 100) {
+        throw new ApiError(400, ERROR_MESSAGES.INVALID_LIMIT);
     }
 
     const paginatedData = await RoomService.getUserFavoriteRooms(user.id, page, limit, search);
@@ -112,7 +118,7 @@ export const getUserFavoriteRooms = async (req: Request, res: Response) => {
  */
 export const recordRoomActivity = async (req: Request, res: Response) => {
     const user = req.user;
-    if (!user || !user.id) throw new ApiError(401, 'Usuario no autenticado.');
+    if (!user || !user.id) throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
 
     const { roomId } = req.params;
     await recordActivity(user.id, roomId);

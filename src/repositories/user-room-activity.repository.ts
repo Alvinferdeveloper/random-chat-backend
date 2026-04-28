@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma';
-import ApiError from '../utils/ApiError';
+import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 
 export const recordActivity = async (userId: string, roomId: string) => {
     try {
@@ -12,7 +12,7 @@ export const recordActivity = async (userId: string, roomId: string) => {
             create: { userId, roomId }
         });
     } catch (error) {
-        throw new ApiError(500, 'Error al registrar la actividad del usuario.');
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };
 
@@ -30,7 +30,7 @@ export const getUserRecentActivity = async (userId: string, limit: number = 10) 
         });
         return activities;
     } catch (error) {
-        throw new ApiError(500, 'Error al obtener la actividad reciente del usuario.');
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };
 
@@ -51,6 +51,6 @@ export const getRoomsWithActivity = async (userId: string, roomIds: string[]) =>
         });
         return activities;
     } catch (error) {
-        throw new ApiError(500, 'Error al obtener las salas con actividad del usuario.');
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };

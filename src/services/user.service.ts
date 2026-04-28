@@ -1,7 +1,7 @@
 import * as UserRepository from '../repositories/user.repository';
 import * as HobbyRepository from '../repositories/hobby.repository';
 import { ProfileInfo } from '@/types/user';
-import ApiError from '../utils/ApiError';
+import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 import { supabase } from '@/lib/supabase';
 import logger from '@/lib/logger';
 
@@ -38,14 +38,14 @@ export const updateUserProfileAttribute = async (userId: string, field: string, 
     if (field === 'username') {
         const existingUser = await UserRepository.findByUsername(value);
         if (existingUser && existingUser.id !== userId) {
-            throw new ApiError(409, 'El nombre de usuario ya está en uso.');
+            throw new ApiError(409, ERROR_MESSAGES.USERNAME_TAKEN);
         }
     }
 
     if (field === 'selected_hobbies') {
         const hobbiesAreValid = await HobbyRepository.hobbiesExist(value as string[]);
         if (!hobbiesAreValid) {
-            throw new ApiError(400, 'Uno o más de los hobbies seleccionados no son válidos.');
+            throw new ApiError(400, ERROR_MESSAGES.INVALID_HOBBIES);
         }
     }
 

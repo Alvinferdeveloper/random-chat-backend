@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma';
-import ApiError from '../utils/ApiError';
+import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 import { Room } from '@prisma/client';
 import { getRoomsWithActivity } from './user-room-activity.repository';
 import { getMultipleActiveUsersCounts } from '../services/room-active-users.service';
@@ -36,7 +36,7 @@ export const findById = async (id: string): Promise<Room | null> => {
         });
         return room;
     } catch (error) {
-        throw new ApiError(500, `Error al buscar la sala con id ${id}.`);
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };
 
@@ -173,7 +173,7 @@ export const findAllPaginated = async (
             }
         };
     } catch (error) {
-        throw new ApiError(500, 'No se pudieron obtener las salas de la base de datos.');
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };
 
@@ -210,7 +210,7 @@ export const create = async (roomData: Omit<Room, 'id' | 'created_at' | 'deleted
         return newRoom;
     } catch (error) {
         logger.error('Error creating room', { error: (error as Error).message });
-        throw new ApiError(500, 'Error al crear la nueva sala.');
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };
 
@@ -228,7 +228,8 @@ export const updateAttribute = async (roomId: string, field: string, value: any)
             data: { [field]: value },
         });
     } catch (error) {
-        throw new ApiError(500, `No se pudo actualizar el campo ${field} de la sala.`);
+        logger.error('Error updating room attribute', { error: (error as Error).message });
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };
 
@@ -244,7 +245,7 @@ export const softDelete = async (roomId: string) => {
             data: { deletedAt: new Date() }
         });
     } catch (error) {
-        throw new ApiError(500, 'No se pudo realizar el borrado lógico de la sala.');
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };
 
@@ -285,7 +286,7 @@ export const findByOwnerId = async (ownerId: string): Promise<Room[]> => {
             isFavorite: room.favoritedBy.length > 0
         }));
     } catch (error) {
-        throw new ApiError(500, 'Error al obtener las salas del usuario.');
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };
 
@@ -325,7 +326,7 @@ export const findAllByStatus = async (status: 'IN_REVISION' | 'ACCEPTED' | 'REJE
             }
         };
     } catch (error) {
-        throw new ApiError(500, 'Error al obtener las salas por estado.');
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };
 
@@ -341,7 +342,7 @@ export const updateStatus = async (roomId: string, status: 'IN_REVISION' | 'ACCE
             data: { status }
         });
     } catch (error) {
-        throw new ApiError(500, 'Error al actualizar el estado de la sala.');
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };
 
@@ -369,7 +370,7 @@ export const toggleFavorite = async (userId: string, roomId: string): Promise<bo
             return true;
         }
     } catch (error) {
-        throw new ApiError(500, 'Error al actualizar el estado de favoritos.');
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };
 
@@ -420,6 +421,6 @@ export const findFavoritesByUserId = async (userId: string, page: number, limit:
             }
         };
     } catch (error) {
-        throw new ApiError(500, 'Error al obtener tus salas favoritas.');
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };

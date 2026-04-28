@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import * as RoomRepository from '../repositories/room.repository';
-import ApiError from '../utils/ApiError';
+import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 
 /**
  * Retrieves rooms by status (pending, accepted, rejected).
@@ -12,7 +12,7 @@ export const getRoomsByStatus = async (req: Request, res: Response) => {
 
     const validStatuses = ['IN_REVISION', 'ACCEPTED', 'REJECTED'];
     if (!validStatuses.includes(status)) {
-        throw new ApiError(400, 'Estado de sala no válido.');
+        throw new ApiError(400, ERROR_MESSAGES.INVALID_INPUT);
     }
 
     const data = await RoomRepository.findAllByStatus(status, page, limit);
@@ -28,7 +28,7 @@ export const updateRoomStatus = async (req: Request, res: Response) => {
 
     const validStatuses = ['IN_REVISION', 'ACCEPTED', 'REJECTED'];
     if (!validStatuses.includes(status)) {
-        throw new ApiError(400, 'Estado de sala no válido.');
+        throw new ApiError(400, ERROR_MESSAGES.INVALID_INPUT);
     }
 
     const updatedRoom = await RoomRepository.updateStatus(roomId, status);

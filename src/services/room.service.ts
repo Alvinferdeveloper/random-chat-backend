@@ -1,5 +1,5 @@
 import * as RoomRepository from '../repositories/room.repository';
-import ApiError from '../utils/ApiError';
+import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 import { Room } from '@prisma/client';
 import { getRedisClient } from '../lib/redis';
 import { supabase } from '../lib/supabase';
@@ -62,19 +62,19 @@ export const createRoom = async (roomData: Omit<Room, 'id' | 'created_at'>, user
         const currentCount = await redisClient.get(RATE_LIMIT_KEY);
 
         if (currentCount && parseInt(currentCount) >= ROOM_LIMITS.MAX_PER_DAY) {
-            throw new ApiError(429, `Límite diario alcanzado (${ROOM_LIMITS.MAX_PER_DAY} salas).`);
+            throw new ApiError(429, ERROR_MESSAGES.DAILY_LIMIT_REACHED);
         }
     }
 
     const newRoomNormalized = normalizeString(roomData.name);
     if (newRoomNormalized.length < 3) {
-        throw new ApiError(400, 'Room name is too short or invalid.');
+        throw new ApiError(400, ERROR_MESSAGES.ROOM_NAME_TOO_SHORT);
     }
 
     const nameExists = await RoomRepository.existsByNameNormalized(newRoomNormalized);
 
     if (nameExists) {
-        throw new ApiError(409, 'A room with a very similar name already exists.');
+        throw new ApiError(409, ERROR_MESSAGES.ROOM_ALREADY_EXISTS);
     }
 
     const newRoom = await RoomRepository.create({
@@ -105,10 +105,10 @@ export const createRoom = async (roomData: Omit<Room, 'id' | 'created_at'>, user
 export const generateRoomUploadUrl = async (roomId: string, type: 'banner' | 'icon', contentType: string, userId: string) => {
     const room = await RoomRepository.findById(roomId);
     if (!room) {
-        throw new ApiError(404, 'La sala no existe.');
+        throw new ApiError(404, ERROR_MESSAGES.ROOM_NOT_FOUND);
     }
     if (room.ownerId !== userId) {
-        throw new ApiError(403, 'No tienes permiso para editar esta sala.');
+        throw new ApiError(403, ERROR_MESSAGES.NOT_ROOM_OWNER);
     }
 
     const bucketName = 'rooms-assets';
@@ -151,36 +151,36 @@ export const updateRoomAttribute = async (roomId: string, field: string, value: 
     // Whitelist allowed fields to prevent Mass Assignment
     const allowedFields = ['server_banner', 'server_icon', 'name', 'short_description', 'full_description'];
     if (!allowedFields.includes(field)) {
-        throw new ApiError(400, 'El campo proporcionado no es válido para actualización.');
+        throw new ApiError(400, ERROR_MESSAGES.FIELD_NOT_ALLOWED);
     }
 
     // Basic URL validation ONLY if it's an image field
     if (['server_banner', 'server_icon'].includes(field)) {
         if (typeof value !== 'string' || !value.startsWith('http')) {
-            throw new ApiError(400, 'El valor proporcionado debe ser una URL válida.');
+            throw new ApiError(400, ERROR_MESSAGES.INVALID_URL);
         }
     }
 
     const room = await RoomRepository.findById(roomId);
     if (!room) {
-        throw new ApiError(404, 'La sala no existe.');
+        throw new ApiError(404, ERROR_MESSAGES.ROOM_NOT_FOUND);
     }
     if (room.ownerId !== userId) {
-        throw new ApiError(403, 'No tienes permiso para editar esta sala.');
+        throw new ApiError(403, ERROR_MESSAGES.NOT_ROOM_OWNER);
     }
 
     // Special logic for 'name' to update normalized_name and check for duplicates
     if (field === 'name') {
         const normalized = normalizeString(value);
         if (normalized.length < 3) {
-            throw new ApiError(400, 'El nombre de la sala es demasiado corto.');
+            throw new ApiError(400, ERROR_MESSAGES.ROOM_NAME_TOO_SHORT);
         }
 
         // Only check for duplicates if the name actually changed its normalized version
         if (normalized !== room.normalized_name) {
             const exists = await RoomRepository.existsByNameNormalized(normalized);
             if (exists) {
-                throw new ApiError(409, 'Ya existe una sala con un nombre muy similar.');
+                throw new ApiError(409, ERROR_MESSAGES.ROOM_ALREADY_EXISTS);
             }
         }
 

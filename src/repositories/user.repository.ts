@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma';
-import ApiError from '../utils/ApiError';
+import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 import { AgeRange, ConversationType } from '@prisma/client'
 import { ProfileInfo } from '@/types/user';
 import logger from '../lib/logger';
@@ -19,7 +19,7 @@ export async function updateUserProfile(userId: string, profileInfo: ProfileInfo
     });
 
     if (!currentUser) {
-        throw new ApiError(404, 'User not found.');
+        throw new ApiError(404, ERROR_MESSAGES.USER_NOT_FOUND);
     }
 
     if (profileInfo.username !== currentUser.username) {
@@ -28,7 +28,7 @@ export async function updateUserProfile(userId: string, profileInfo: ProfileInfo
         });
 
         if (existingUser) {
-            throw new ApiError(409, 'Username already taken.');
+            throw new ApiError(409, ERROR_MESSAGES.USERNAME_TAKEN);
         }
     }
     try {
@@ -48,7 +48,7 @@ export async function updateUserProfile(userId: string, profileInfo: ProfileInfo
         return updatedUser;
     } catch (error) {
         logger.debug('Error', { error: (error as Error).message });
-        throw new ApiError(500, 'Internal server errore.');
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 }
 
@@ -114,13 +114,13 @@ export const findProfileByUsername = async (username: string) => {
         });
 
         if (!userProfile) {
-            throw new ApiError(404, 'Perfil de usuario no encontrado.');
+            throw new ApiError(404, ERROR_MESSAGES.NOT_FOUND);
         }
         return userProfile;
     } catch (error) {
         if (error instanceof ApiError) throw error;
         logger.error('Error fetching user profile for username', { username, error: (error as Error).message });
-        throw new ApiError(500, 'Error interno del servidor al obtener el perfil.');
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };
 
@@ -153,13 +153,13 @@ export const findProfileById = async (userId: string) => {
         });
 
         if (!userProfile) {
-            throw new ApiError(404, 'Perfil de usuario no encontrado.');
+            throw new ApiError(404, ERROR_MESSAGES.NOT_FOUND);
         }
         return userProfile;
     } catch (error) {
         if (error instanceof ApiError) throw error;
         logger.error('Error fetching user profile', { userId, error: (error as Error).message });
-        throw new ApiError(500, 'Error interno del servidor al obtener el perfil.');
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };
 
@@ -173,7 +173,7 @@ const ALLOWED_PROFILE_FIELDS = ['username', 'bio', 'location', 'ageRange', 'conv
 
 export const updateProfileAttribute = (userId: string, field: string, value: any) => {
     if (!ALLOWED_PROFILE_FIELDS.includes(field as typeof ALLOWED_PROFILE_FIELDS[number])) {
-        throw new ApiError(400, `Field '${field}' is not allowed for update.`);
+        throw new ApiError(400, ERROR_MESSAGES.FIELD_NOT_ALLOWED);
     }
 
     try {
@@ -200,6 +200,6 @@ export const updateProfileAttribute = (userId: string, field: string, value: any
         });
     } catch (error) {
         logger.error('Error updating user field', { userId, field, error: (error as Error).message });
-        throw new ApiError(500, `No se pudo actualizar el campo ${field}.`);
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 }

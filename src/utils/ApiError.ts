@@ -1,3 +1,5 @@
+import { ERROR_MESSAGES, type ErrorKey } from '../lib/errorMessages';
+
 class ApiError extends Error {
     public statusCode: number;
 
@@ -13,3 +15,4 @@ class ApiError extends Error {
 }
 
 export default ApiError;
+export { ERROR_MESSAGES, type ErrorKey };
