@@ -1,20 +1,14 @@
 import { Request, Response } from "express";
 import * as RoomService from '../services/room.service';
-import { recordActivity } from '../repositories/user-room-activity.repository';
 import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 
 export const getRooms = async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const search = req.query.q as string | undefined;
-    const userId = req.user?.id; // Optional: used to include 'isFavorite' status
+    const userId = req.user?.id;
 
-    if (page < 1) {
-        throw new ApiError(400, ERROR_MESSAGES.INVALID_PAGE);
-    }
-    if (limit < 1 || limit > 100) {
-        throw new ApiError(400, ERROR_MESSAGES.INVALID_LIMIT);
-    }
+    RoomService.validateRoomListParams(page, limit);
 
     const paginatedData = await RoomService.getAllRooms(page, limit, search, userId);
     res.status(200).json(paginatedData);
@@ -121,7 +115,7 @@ export const recordRoomActivity = async (req: Request, res: Response) => {
     if (!user || !user.id) throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
 
     const { roomId } = req.params;
-    await recordActivity(user.id, roomId);
+    await RoomService.recordRoomActivity(user.id, roomId);
 
     res.status(200).json({ success: true, message: 'Actividad registrada.' });
 };

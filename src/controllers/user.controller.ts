@@ -46,10 +46,7 @@ export const updateUserProfile = async (req: Request, res: Response) => {
         throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
     }
 
-    const fieldToUpdate = Object.keys(req.body)[0];
-    const value = req.body[fieldToUpdate];
-
-    const updatedUser = await UserService.updateUserProfileAttribute(user.id, fieldToUpdate, value);
+    const updatedUser = await UserService.updateUserProfileFromBody(user.id, req.body);
 
     res.status(200).json({ success: true, user: updatedUser });
 };

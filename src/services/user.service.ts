@@ -88,3 +88,14 @@ export const generateProfileUploadUrl = async (userId: string, fileName: string)
         publicUrl: publicUrlData.publicUrl,
     };
 };
+
+export const updateUserProfileFromBody = async (userId: string, body: Record<string, unknown>) => {
+    const fieldToUpdate = Object.keys(body)[0];
+    const value = body[fieldToUpdate];
+
+    if (!fieldToUpdate) {
+        throw new ApiError(400, ERROR_MESSAGES.FIELD_NOT_ALLOWED);
+    }
+
+    return updateUserProfileAttribute(userId, fieldToUpdate, value);
+};

@@ -1,4 +1,5 @@
 import * as RoomRepository from '../repositories/room.repository';
+import { recordActivity } from '../repositories/user-room-activity.repository';
 import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 import { Room } from '@prisma/client';
 import { getRedisClient } from '../lib/redis';
@@ -221,4 +222,17 @@ export const toggleFavoriteRoom = async (userId: string, roomId: string) => {
 export const getUserFavoriteRooms = async (userId: string, page: number, limit: number, search?: string) => {
     const normalizedSearch = search ? normalizeString(search) : undefined;
     return RoomRepository.findFavoritesByUserId(userId, page, limit, normalizedSearch);
+};
+
+export const recordRoomActivity = async (userId: string, roomId: string) => {
+    return recordActivity(userId, roomId);
+};
+
+export const validateRoomListParams = (page: number, limit: number) => {
+    if (page < 1) {
+        throw new ApiError(400, ERROR_MESSAGES.INVALID_PAGE);
+    }
+    if (limit < 1 || limit > 100) {
+        throw new ApiError(400, ERROR_MESSAGES.INVALID_LIMIT);
+    }
 };
