@@ -6,11 +6,12 @@ export const getRooms = async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const search = req.query.q as string | undefined;
+    const category = req.query.category as string | undefined;
     const userId = req.user?.id;
 
     RoomService.validateRoomListParams(page, limit);
 
-    const paginatedData = await RoomService.getAllRooms(page, limit, search, userId);
+    const paginatedData = await RoomService.getAllRooms(page, limit, search, userId, category);
     res.status(200).json(paginatedData);
 };
 

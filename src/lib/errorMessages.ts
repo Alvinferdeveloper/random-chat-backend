@@ -21,6 +21,7 @@ export const ERROR_MESSAGES = {
     ROOM_ALREADY_ACCEPTED: 'Room has already been accepted',
     ROOM_ALREADY_EXISTS: 'A room with a very similar name already exists',
     DAILY_LIMIT_REACHED: 'Daily limit reached',
+    INVALID_CATEGORIES: 'One or more selected categories are invalid',
 
     // Validation
     INVALID_INPUT: 'Invalid input provided',

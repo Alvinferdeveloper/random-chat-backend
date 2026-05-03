@@ -12,6 +12,17 @@ const hobbies = [
     { name: 'Fitness', icon: '💪' }
 ];
 
+const categories = [
+    { name: 'Deportes', icon: '⚽' },
+    { name: 'Música', icon: '🎵' },
+    { name: 'Gaming', icon: '🎮' },
+    { name: 'Tecnología', icon: '💻' },
+    { name: 'Arte', icon: '🎨' },
+    { name: 'Ciencia', icon: '🔬' },
+    { name: 'Entretenimiento', icon: '🎬' },
+    { name: 'Noticias', icon: '📰' }
+];
+
 const defaultRooms = [
     {
         name: 'Rincón Musical',
@@ -118,6 +129,17 @@ async function main() {
         });
     }
     console.log(`✅ ${hobbies.length} hobbies creados\n`);
+
+    // Seed de categorías
+    console.log('📂 Creando categorías...');
+    for (const category of categories) {
+        await prisma.category.upsert({
+            where: { name: category.name },
+            update: { icon: category.icon },
+            create: { name: category.name, icon: category.icon },
+        });
+    }
+    console.log(`✅ ${categories.length} categorías creadas\n`);
 
     // Seed de salas por defecto
     console.log('🏠 Creando salas por defecto...');

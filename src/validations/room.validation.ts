@@ -6,6 +6,9 @@ export const getRoomsSchema = z.object({
             .min(1, 'El término de búsqueda no puede estar vacío.')
             .max(100, 'El término de búsqueda no puede exceder los 100 caracteres.')
             .optional(),
+        category: z.string()
+            .min(1, 'La categoría no puede estar vacía.')
+            .optional(),
         page: z.coerce.number().int().positive().optional(),
         limit: z.coerce.number().int().positive().optional(),
     }),
@@ -27,6 +30,7 @@ export const createRoomSchema = z.object({
 
         server_banner: z.string().url().optional(),
         server_icon: z.string().url().optional(),
+        categoryIds: z.array(z.string()).optional(),
     }),
 });
 
@@ -78,5 +82,6 @@ export const getUserFavoriteRoomsSchema = z.object({
         page: z.coerce.number().int().positive().optional().default(1),
         limit: z.coerce.number().int().positive().max(100).optional().default(10),
         q: z.string().max(100).optional(),
+        category: z.string().optional(),
     }),
 });

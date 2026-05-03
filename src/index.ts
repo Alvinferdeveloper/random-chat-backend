@@ -10,6 +10,7 @@ import { ChatService } from '@/services/chat/chat.service';
 import roomRouter from '@/routes/v1/room.routes';
 import userRouter from '@/routes/v1/user.routes';
 import hobbyRouter from '@/routes/v1/hobby.routes';
+import categoryRouter from '@/routes/v1/category.routes';
 import adminRouter from '@/routes/v1/admin.routes';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from '@/lib/auth';
@@ -91,6 +92,7 @@ app.use('/api/v1/rooms', roomRouter);
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/users', userRouter);
 app.use(validateSession);
+app.use('/api/v1/categories', categoryRouter);
 app.use('/api/v1/hobbies', hobbyRouter);
 app.use('/api/v1/health', healthRouter);
 

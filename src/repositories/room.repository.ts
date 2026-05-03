@@ -1,6 +1,6 @@
 import prisma from '../lib/prisma';
 import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
-import { Room } from '@prisma/client';
+import { Room, RoomCategory } from '@prisma/client';
 import { getRoomsWithActivity } from './user-room-activity.repository';
 import { getMultipleActiveUsersCounts } from '../services/room-active-users.service';
 import logger from '../lib/logger';
@@ -51,7 +51,7 @@ export const findById = async (id: string): Promise<Room | null> => {
 export const findAllPaginated = async (
     page: number,
     limit: number,
-    options: { includeAllStatuses?: boolean, search?: string, userId?: string } = {}
+    options: { includeAllStatuses?: boolean, search?: string, userId?: string, categoryId?: string } = {}
 ) => {
     try {
         const skip = (page - 1) * limit;
@@ -69,17 +69,28 @@ export const findAllPaginated = async (
             whereCondition.normalized_name = { contains: options.search };
         }
 
+        if (options.categoryId) {
+            whereCondition.categories = {
+                some: { categoryId: options.categoryId }
+            };
+        }
+
         const [rooms, totalItems] = await prisma.$transaction([
             prisma.room.findMany({
                 where: whereCondition,
                 orderBy: { created_at: 'desc' },
                 take: POOL_SIZE,
-                include: options.userId ? {
-                    favoritedBy: {
-                        where: { userId: options.userId },
-                        select: { userId: true }
-                    }
-                } : undefined
+                include: {
+                    categories: {
+                        include: { category: true }
+                    },
+                    ...(options.userId ? {
+                        favoritedBy: {
+                            where: { userId: options.userId },
+                            select: { userId: true }
+                        }
+                    } : {})
+                }
             }),
             prisma.room.count({ where: whereCondition })
         ]);
@@ -118,17 +129,25 @@ export const findAllPaginated = async (
                     where: {
                         id: { in: roomsWithoutActivity },
                         deletedAt: null,
-                        ...(options.includeAllStatuses ? {} : { status: 'ACCEPTED' })
+                        ...(options.includeAllStatuses ? {} : { status: 'ACCEPTED' }),
+                        ...(options.categoryId ? {
+                            categories: {
+                                some: { categoryId: options.categoryId }
+                            }
+                        } : {})
                     },
                     take: 100,
-                    orderBy: { created_at: 'desc' }
+                    orderBy: { created_at: 'desc' },
+                    include: {
+                        categories: { include: { category: true } }
+                    }
                 });
 
                 const existingIds = new Set(rooms.map(r => r.id));
                 const newRooms = roomsToAdd.filter(r => !existingIds.has(r.id));
 
                 if (newRooms.length > 0) {
-                    rooms.push(...newRooms);
+                    rooms.push(...newRooms as any);
                 }
             }
         }
@@ -140,9 +159,10 @@ export const findAllPaginated = async (
         const totalActiveUsers = Object.values(activeUsersMap).reduce((sum, count) => sum + count, 0);
 
         const scoredRooms = rooms.map(room => {
-            const { favoritedBy, ...roomData } = room as any;
+            const { favoritedBy, categories, ...roomData } = room as any;
             const activity = activityMap[room.id];
             const activeUsers = activeUsersMap[room.id] || 0;
+            const categoryList = (categories || []).map((c: any) => c.category);
 
             const score = calculateScore(
                 activity?.lastInteraction || null,
@@ -155,7 +175,8 @@ export const findAllPaginated = async (
                 ...roomData,
                 isFavorite: options.userId ? favoritedBy?.length > 0 : false,
                 score: Math.round(score * 100) / 100,
-                activeUsers
+                activeUsers,
+                categories: categoryList
             };
         });
 
@@ -196,15 +217,28 @@ export const existsByNameNormalized = async (normalized_name: string): Promise<b
 /**
  * Creates a new room.
  * @param roomData - Data for the new room.
+ * @param categoryIds - Optional array of category IDs to associate with the room.
  * @throws ApiError if an error occurs during the creation.
  */
-export const create = async (roomData: Omit<Room, 'id' | 'created_at' | 'deletedAt'>): Promise<Room> => {
+export const create = async (
+    roomData: Omit<Room, 'id' | 'created_at' | 'deletedAt'> & { categoryIds: string[] },
+): Promise<Room & { categories: RoomCategory[] }> => {
+    const { categoryIds, ...restOfRoomData } = roomData;
+
     try {
         const newRoom = await prisma.room.create({
             data: {
-                ...roomData,
+                ...restOfRoomData,
                 server_banner: '',
-                server_icon: ''
+                server_icon: '',
+                ...(categoryIds && categoryIds.length > 0 ? {
+                    categories: {
+                        create: categoryIds.map(catId => ({ categoryId: catId }))
+                    }
+                } : {})
+            },
+            include: {
+                categories: { include: { category: true } }
             }
         });
         return newRoom;

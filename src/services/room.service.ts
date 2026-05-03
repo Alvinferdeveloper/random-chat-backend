@@ -1,5 +1,6 @@
 import * as RoomRepository from '../repositories/room.repository';
 import { recordActivity } from '../repositories/user-room-activity.repository';
+import * as CategoryRepository from '../repositories/category.repository';
 import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 import { Room } from '@prisma/client';
 import { getRedisClient } from '../lib/redis';
@@ -30,13 +31,15 @@ export const roomExists = async (id: string) => {
  * @param limit - The number of items per page.
  * @param search - Optional search string.
  * @param userId - Optional ID of the current user to include favorite status.
+ * @param categoryId - Optional category ID to filter rooms.
  * @returns The paginated room data.
  */
-export const getAllRooms = async (page: number, limit: number, search?: string, userId?: string) => {
+export const getAllRooms = async (page: number, limit: number, search?: string, userId?: string, categoryId?: string) => {
     const normalizedSearch = search ? normalizeString(search) : undefined;
     const paginatedRooms = await RoomRepository.findAllPaginated(page, limit, {
         search: normalizedSearch,
-        userId
+        userId,
+        categoryId
     });
     return paginatedRooms;
 };
@@ -78,10 +81,19 @@ export const createRoom = async (roomData: Omit<Room, 'id' | 'created_at'>, user
         throw new ApiError(409, ERROR_MESSAGES.ROOM_ALREADY_EXISTS);
     }
 
+    const categoryIds = (roomData as any).categoryIds as string[] | undefined;
+    if (categoryIds && categoryIds.length > 0) {
+        const validCategories = await CategoryRepository.categoriesExist(categoryIds);
+        if (!validCategories) {
+            throw new ApiError(400, ERROR_MESSAGES.INVALID_CATEGORIES);
+        }
+    }
+
     const newRoom = await RoomRepository.create({
         ...roomData,
         ownerId: userId,
-        normalized_name: newRoomNormalized
+        normalized_name: newRoomNormalized,
+        categoryIds: categoryIds || []
     });
 
     if (redisClient) {
