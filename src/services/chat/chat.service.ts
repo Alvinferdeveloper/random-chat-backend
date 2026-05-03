@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import crypto from 'crypto';
 import sanitizeHtml from 'sanitize-html';
-import { roomExists } from '../room.service';
+import { roomExists, getRoomStatus } from '../room.service';
 import { IChatAdapter, ChatMessage } from './adapters/base.adapter';
 import * as UserRepository from '../../repositories/user.repository';
 import { supabase } from '@/lib/supabase';
@@ -101,8 +101,15 @@ export class ChatService {
     }
 
     private async joinRoom(socket: Socket, parentRoom: string, clientUsername: string): Promise<void> {
-        if (!await roomExists(parentRoom)) {
+        const roomStatus = await getRoomStatus(parentRoom);
+        
+        if (!roomStatus.exists) {
             socket.emit('error', 'La sala no existe');
+            return;
+        }
+
+        if (roomStatus.status !== 'ACCEPTED') {
+            socket.emit('error', 'La sala no está disponible para unirse');
             return;
         }
 

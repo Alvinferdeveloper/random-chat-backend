@@ -31,10 +31,37 @@ export const findById = async (id: string): Promise<Room | null> => {
         const room = await prisma.room.findFirst({
             where: {
                 id,
+                deletedAt: null,
+                status: 'ACCEPTED'
+            }
+        });
+        return room;
+    } catch (error) {
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
+    }
+};
+
+export const findByIdAnyStatus = async (id: string): Promise<Room | null> => {
+    try {
+        const room = await prisma.room.findFirst({
+            where: {
+                id,
                 deletedAt: null
             }
         });
         return room;
+    } catch (error) {
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
+    }
+};
+
+export const getRoomStatus = async (id: string): Promise<{ exists: boolean; status?: string }> => {
+    try {
+        const room = await prisma.room.findFirst({
+            where: { id, deletedAt: null },
+            select: { status: true }
+        });
+        return { exists: !!room, status: room?.status };
     } catch (error) {
         throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }

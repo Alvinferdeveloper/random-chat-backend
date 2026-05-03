@@ -25,6 +25,10 @@ export const roomExists = async (id: string) => {
     return RoomRepository.findById(id);
 };
 
+export const getRoomStatus = async (id: string) => {
+    return RoomRepository.getRoomStatus(id);
+};
+
 /**
  * Retrieves a paginated list of all rooms.
  * @param page - The page number.
@@ -116,7 +120,7 @@ export const createRoom = async (roomData: Omit<Room, 'id' | 'created_at'>, user
  * @returns An object containing the signed upload URL and the public URL.
  */
 export const generateRoomUploadUrl = async (roomId: string, type: 'banner' | 'icon', contentType: string, userId: string) => {
-    const room = await RoomRepository.findById(roomId);
+    const room = await RoomRepository.findByIdAnyStatus(roomId);
     if (!room) {
         throw new ApiError(404, ERROR_MESSAGES.ROOM_NOT_FOUND);
     }
@@ -174,7 +178,7 @@ export const updateRoomAttribute = async (roomId: string, field: string, value: 
         }
     }
 
-    const room = await RoomRepository.findById(roomId);
+    const room = await RoomRepository.findByIdAnyStatus(roomId);
     if (!room) {
         throw new ApiError(404, ERROR_MESSAGES.ROOM_NOT_FOUND);
     }
