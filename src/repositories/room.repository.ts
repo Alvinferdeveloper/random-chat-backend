@@ -93,7 +93,18 @@ export const findAllPaginated = async (
         }
 
         if (options.search) {
-            whereCondition.normalized_name = { contains: options.search };
+            whereCondition.OR = [
+                { normalized_name: { contains: options.search } },
+                {
+                    categories: {
+                        some: {
+                            category: {
+                                name: { contains: options.search }
+                            }
+                        }
+                    }
+                }
+            ];
         }
 
         if (options.categoryId) {

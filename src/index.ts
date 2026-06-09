@@ -89,10 +89,10 @@ app.all("/api/auth/{*any}", authLimiter, toNodeHandler(auth));
 
 app.use(express.json());
 app.use('/api/v1/rooms', roomRouter);
+app.use('/api/v1/categories', categoryRouter);
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/users', userRouter);
 app.use(validateSession);
-app.use('/api/v1/categories', categoryRouter);
 app.use('/api/v1/hobbies', hobbyRouter);
 app.use('/api/v1/health', healthRouter);
 
@@ -119,7 +119,7 @@ function setupChatAdapter(): IChatAdapter {
         }
     }
     logger.warn('Redis unavailable, falling back to InMemory');
-    return new InMemoryAdapter();
+    return InMemoryAdapter.getInstance();
 }
 
 function setupSocketHandlers(io: Server, chatService: ChatService) {
