@@ -114,6 +114,16 @@ export class ChatService {
         }
 
         const userId = socket.data.user?.id || clientUsername;
+
+        // Check if user is banned
+        if (socket.data.user?.id) {
+            const dbUser = await UserRepository.findProfileById(socket.data.user.id);
+            if ((dbUser as any).isBanned) {
+                socket.emit('error', 'Tu cuenta ha sido suspendida. Contacta con soporte.');
+                socket.disconnect();
+                return;
+            }
+        }
         const { subRoomName, totalUsersInParentRoom } = await this.adapter.joinRoom(parentRoom, userId);
         await socket.join(subRoomName);
 

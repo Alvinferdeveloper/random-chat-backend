@@ -142,6 +142,8 @@ export const findProfileById = async (userId: string) => {
                 location: true,
                 ageRange: true,
                 conversationType: true,
+                isBanned: true,
+                banReason: true,
                 hobbies: {
                     select: {
                         id: true,
@@ -161,6 +163,60 @@ export const findProfileById = async (userId: string) => {
         logger.error('Error fetching user profile', { userId, error: (error as Error).message });
         throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
+};
+
+/**
+ * Finds all users with pagination and search.
+ */
+export const findAll = async (page: number, limit: number, search?: string) => {
+    const skip = (page - 1) * limit;
+    const where = search ? {
+        OR: [
+            { username: { contains: search } },
+            { email: { contains: search } },
+            { name: { contains: search } },
+        ]
+    } : {};
+
+    const [users, total] = await Promise.all([
+        prisma.user.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                name: true,
+                role: true,
+                isBanned: true,
+                createdAt: true,
+                image: true
+            }
+        }),
+        prisma.user.count({ where })
+    ]);
+
+    return {
+        users,
+        pagination: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    };
+};
+
+/**
+ * Updates a user's ban status.
+ */
+export const updateBanStatus = async (userId: string, isBanned: boolean, banReason?: string) => {
+    return prisma.user.update({
+        where: { id: userId },
+        data: { isBanned, banReason }
+    });
 };
 
 /**

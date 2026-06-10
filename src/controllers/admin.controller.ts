@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as RoomRepository from '../repositories/room.repository';
+import * as UserRepository from '../repositories/user.repository';
 import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 
 /**
@@ -36,5 +37,32 @@ export const updateRoomStatus = async (req: Request, res: Response) => {
         success: true,
         message: `Sala ${status.toLowerCase()} correctamente.`,
         data: updatedRoom
+    });
+};
+
+/**
+ * Retrieves all users with pagination and search.
+ */
+export const getUsers = async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = req.query.search as string;
+
+    const data = await UserRepository.findAll(page, limit, search);
+    res.status(200).json(data);
+};
+
+/**
+ * Updates a user's ban status.
+ */
+export const updateUserBanStatus = async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    const { isBanned, banReason } = req.body;
+
+    const updatedUser = await UserRepository.updateBanStatus(userId, isBanned, banReason);
+    res.status(200).json({
+        success: true,
+        message: `Usuario ${isBanned ? 'baneado' : 'desbaneado'} correctamente.`,
+        data: updatedUser
     });
 };
