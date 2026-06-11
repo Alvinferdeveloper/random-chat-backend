@@ -1,12 +1,21 @@
 import prisma from '../lib/prisma';
 import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
-import { Room, RoomCategory } from '@prisma/client';
+import { Room, RoomCategory, RoomStatus } from '@prisma/client';
 import { getRoomsWithActivity } from './user-room-activity.repository';
 import { getMultipleActiveUsersCounts } from '../services/room-active-users.service';
 import logger from '../lib/logger';
 
 const RECENCY_WEIGHT = 0.6;
 const POPULARITY_WEIGHT = 0.4;
+
+/**
+ * Counts rooms by status.
+ */
+export const countByStatus = async (status?: RoomStatus) => {
+    return prisma.room.count({
+        where: status ? { status, deletedAt: null } : { deletedAt: null }
+    });
+};
 
 const calculateScore = (lastInteraction: Date | null, interactionCount: number, activeUsers: number, totalActiveUsers: number): number => {
     let recencyScore = 0;

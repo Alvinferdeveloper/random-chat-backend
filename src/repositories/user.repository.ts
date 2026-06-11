@@ -166,6 +166,13 @@ export const findProfileById = async (userId: string) => {
 };
 
 /**
+ * Counts total users.
+ */
+export const countAll = async () => {
+    return prisma.user.count();
+};
+
+/**
  * Finds all users with pagination and search.
  */
 export const findAll = async (page: number, limit: number, search?: string) => {

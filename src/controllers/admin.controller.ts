@@ -2,6 +2,24 @@ import { Request, Response } from "express";
 import * as RoomRepository from '../repositories/room.repository';
 import * as UserRepository from '../repositories/user.repository';
 import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
+import { RoomStatus } from "@prisma/client";
+
+/**
+ * Retrieves general platform statistics.
+ */
+export const getStats = async (req: Request, res: Response) => {
+    const [totalUsers, activeRooms, pendingRooms] = await Promise.all([
+        UserRepository.countAll(),
+        RoomRepository.countByStatus('ACCEPTED' as RoomStatus),
+        RoomRepository.countByStatus('IN_REVISION' as RoomStatus),
+    ]);
+
+    res.status(200).json({
+        totalUsers,
+        activeRooms,
+        pendingRooms,
+    });
+};
 
 /**
  * Retrieves rooms by status (pending, accepted, rejected).

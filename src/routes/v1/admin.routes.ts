@@ -7,18 +7,21 @@ import {
 } from "../../controllers/admin.controller";
 import { asyncHandler } from '../../utils/asyncHandler';
 import { validate } from '../../middlewares/validate';
-import { 
-    getRoomsByStatusSchema, 
+import {
+    getRoomsByStatusSchema,
     updateRoomStatusSchema,
     getUsersSchema,
     updateUserBanStatusSchema
 } from '../../validations/admin.validation';
 import validateSession from "../../middlewares/validateSession";
 import validateAdmin from "../../middlewares/validateAdmin";
+import { getStats } from "../../controllers/admin.controller";
 
 const router = Router();
 
 router.use(validateSession, validateAdmin);
+
+router.get('/stats', asyncHandler(getStats));
 
 router.get('/rooms', validate(getRoomsByStatusSchema), asyncHandler(getRoomsByStatus));
 router.patch('/rooms/:roomId/status', validate(updateRoomStatusSchema), asyncHandler(updateRoomStatus));
