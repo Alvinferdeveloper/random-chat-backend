@@ -26,6 +26,7 @@ model Room {
   favoritedBy FavoriteRoom[]
   userActivities UserRoomActivity[]
   categories   RoomCategory[]
+  reports      Report[]
 
   @@index([deletedAt, status])
   @@index([status, deletedAt, created_at])
@@ -91,9 +92,45 @@ model User {
   favoriteRooms      FavoriteRoom[]
   roomActivities     UserRoomActivity[]
   favoriteGifs       FavoriteGif[]
+  reportsMade        Report[]           @relation("ReportsMade")
+  reportsReceived     Report[]           @relation("ReportsReceived")
 
   @@unique([email])
   @@map("user")
+}
+
+model Report {
+  id              String       @id @default(cuid())
+  reporterId      String
+  reportedUserId  String
+  roomId          String?      @db.Char(36)
+  reason          ReportReason
+  details         String?      @db.VarChar(255)
+  status          ReportStatus @default(PENDING)
+  createdAt       DateTime     @default(now())
+
+  reporter       User  @relation("ReportsMade", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser   User  @relation("ReportsReceived", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  room           Room? @relation(fields: [roomId], references: [id], onDelete: SetNull)
+
+  @@index([reportedUserId, status])
+  @@index([status])
+  @@map("report")
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  INAPPROPRIATE_CONTENT
+  HATE_SPEECH
+  ANNOYING_BEHAVIOR
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
 }
 
 model FavoriteGif {
