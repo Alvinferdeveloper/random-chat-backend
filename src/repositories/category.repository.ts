@@ -64,3 +64,32 @@ export const categoriesExist = async (ids: string[]) => {
     const categories = await findCategoriesByIds(ids);
     return categories.length === ids.length;
 };
+
+export const create = async (data: { name: string, icon?: string }) => {
+    try {
+        return await prisma.category.create({ data });
+    } catch (error) {
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
+    }
+};
+
+export const update = async (id: string, data: { name?: string, icon?: string }) => {
+    try {
+        return await prisma.category.update({
+            where: { id },
+            data
+        });
+    } catch (error) {
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
+    }
+};
+
+export const remove = async (id: string) => {
+    try {
+        return await prisma.category.delete({
+            where: { id }
+        });
+    } catch (error) {
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
+    }
+};

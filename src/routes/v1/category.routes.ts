@@ -1,22 +1,32 @@
 import { Router } from 'express';
-import * as CategoryService from '@/services/category.service';
+import { 
+    getCategories, 
+    getCategoryById, 
+    createCategory, 
+    updateCategory, 
+    deleteCategory 
+} from '@/controllers/category.controller';
 import { asyncHandler } from '@/utils/asyncHandler';
+import { validate } from '@/middlewares/validate';
+import { 
+    createCategorySchema, 
+    updateCategorySchema, 
+    deleteCategorySchema 
+} from '@/validations/category.validation';
+import validateSession from '@/middlewares/validateSession';
+import validateAdmin from '@/middlewares/validateAdmin';
 
 const router = Router();
 
-router.get('/', asyncHandler(async (req, res) => {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const search = req.query.q as string | undefined;
-    
-    const result = await CategoryService.getCategories(page, limit, search);
-    res.json(result.data);
-}));
+// Public routes
+router.get('/', asyncHandler(getCategories));
+router.get('/:id', asyncHandler(getCategoryById));
 
-router.get('/:id', asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const category = await CategoryService.getCategoryById(id);
-    res.json(category);
-}));
+// Admin routes
+router.use(validateSession, validateAdmin);
+
+router.post('/', validate(createCategorySchema), asyncHandler(createCategory));
+router.patch('/:id', validate(updateCategorySchema), asyncHandler(updateCategory));
+router.delete('/:id', validate(deleteCategorySchema), asyncHandler(deleteCategory));
 
 export default router;
