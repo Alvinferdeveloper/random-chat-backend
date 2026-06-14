@@ -3,7 +3,9 @@ import {
     getRoomsByStatus,
     updateRoomStatus,
     getUsers,
-    updateUserBanStatus
+    updateUserBanStatus,
+    getStats,
+    sendBroadcast
 } from "../../controllers/admin.controller";
 import { asyncHandler } from '../../utils/asyncHandler';
 import { validate } from '../../middlewares/validate';
@@ -15,18 +17,22 @@ import {
 } from '../../validations/admin.validation';
 import validateSession from "../../middlewares/validateSession";
 import validateAdmin from "../../middlewares/validateAdmin";
-import { getStats } from "../../controllers/admin.controller";
+import { ChatService } from "../../services/chat/chat.service";
 
-const router = Router();
+export default (chatService: ChatService) => {
+    const router = Router();
 
-router.use(validateSession, validateAdmin);
+    router.use(validateSession, validateAdmin);
 
-router.get('/stats', asyncHandler(getStats));
+    router.get('/stats', asyncHandler(getStats));
 
-router.get('/rooms', validate(getRoomsByStatusSchema), asyncHandler(getRoomsByStatus));
-router.patch('/rooms/:roomId/status', validate(updateRoomStatusSchema), asyncHandler(updateRoomStatus));
+    router.post('/broadcast', asyncHandler(sendBroadcast(chatService)));
 
-router.get('/users', validate(getUsersSchema), asyncHandler(getUsers));
-router.patch('/users/:userId/ban', validate(updateUserBanStatusSchema), asyncHandler(updateUserBanStatus));
+    router.get('/rooms', validate(getRoomsByStatusSchema), asyncHandler(getRoomsByStatus));
+    router.patch('/rooms/:roomId/status', validate(updateRoomStatusSchema), asyncHandler(updateRoomStatus));
 
-export default router;
+    router.get('/users', validate(getUsersSchema), asyncHandler(getUsers));
+    router.patch('/users/:userId/ban', validate(updateUserBanStatusSchema), asyncHandler(updateUserBanStatus));
+
+    return router;
+};

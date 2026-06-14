@@ -3,6 +3,25 @@ import * as RoomRepository from '../repositories/room.repository';
 import * as UserRepository from '../repositories/user.repository';
 import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 import { RoomStatus } from "@prisma/client";
+import { ChatService } from "../services/chat/chat.service";
+
+/**
+ * Sends a global system message to all connected users.
+ */
+export const sendBroadcast = (chatService: ChatService) => async (req: Request, res: Response) => {
+    const { message } = req.body;
+
+    if (!message || message.trim().length === 0) {
+        throw new ApiError(400, "El mensaje no puede estar vacío.");
+    }
+
+    chatService.broadcastGlobalMessage(message);
+
+    res.status(200).json({
+        success: true,
+        message: "Mensaje global enviado correctamente."
+    });
+};
 
 /**
  * Retrieves general platform statistics.

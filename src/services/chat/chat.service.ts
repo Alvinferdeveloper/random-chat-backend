@@ -55,6 +55,19 @@ export class ChatService {
      * and broadcasts the list to that room.
      * @param subRoomName - The name of the sub-room to broadcast to.
      */
+    /**
+     * Broadcasts a system message to ALL connected clients across all rooms.
+     */
+    public broadcastGlobalMessage(message: string): void {
+        this.io.emit('global_system_message', {
+            id: crypto.randomUUID(),
+            message: sanitizeHtml(message, sanitizeOptions),
+            timestamp: new Date().toISOString(),
+            system: true,
+            isGlobal: true
+        });
+    }
+
     private async _broadcastUserList(subRoomName: string): Promise<void> {
         try {
             const sockets = await this.io.in(subRoomName).fetchSockets();

@@ -91,7 +91,7 @@ app.all("/api/auth/{*any}", authLimiter, toNodeHandler(auth));
 app.use(express.json());
 app.use('/api/v1/rooms', roomRouter);
 app.use('/api/v1/categories', categoryRouter);
-app.use('/api/v1/admin', adminRouter);
+app.use('/api/v1/admin', adminRouter(chatService));
 app.use('/api/v1/reports', reportRouter);
 app.use('/api/v1/users', userRouter);
 app.use(validateSession);
