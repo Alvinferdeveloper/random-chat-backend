@@ -106,6 +106,7 @@ model Report {
   roomId          String?      @db.Char(36)
   reason          ReportReason
   details         String?      @db.VarChar(255)
+  chatContext     Json?
   status          ReportStatus @default(PENDING)
   createdAt       DateTime     @default(now())
 

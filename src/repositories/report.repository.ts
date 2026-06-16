@@ -1,5 +1,6 @@
 import prisma from '../lib/prisma';
 import { ReportReason, ReportStatus } from '@prisma/client';
+import { ChatMessage } from '../services/chat/adapters/base.adapter';
 
 /**
  * Creates a new report.
@@ -10,9 +11,13 @@ export const create = async (data: {
     roomId?: string;
     reason: ReportReason;
     details?: string;
+    chatContext?: ChatMessage[];
 }) => {
     return prisma.report.create({
-        data,
+        data: {
+            ...data,
+            chatContext: data.chatContext as any
+        },
         include: {
             reportedUser: {
                 select: { username: true }

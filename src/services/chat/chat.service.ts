@@ -4,6 +4,7 @@ import sanitizeHtml from 'sanitize-html';
 import { roomExists, getRoomStatus } from '../room.service';
 import { IChatAdapter, ChatMessage } from './adapters/base.adapter';
 import * as UserRepository from '../../repositories/user.repository';
+import * as ReportRepository from '../../repositories/report.repository';
 import { supabase } from '@/lib/supabase';
 import ApiError from '@/utils/ApiError';
 import logger from '@/lib/logger';
@@ -96,6 +97,7 @@ export class ChatService {
         socket.on('join-room', (room, username) => this.joinRoom(socket, room, username));
         socket.on('leave-room', () => this.leaveRoom(socket));
         socket.on('message', (payload) => this.handleMessage(socket, payload));
+        socket.on('report-user', (payload) => this.handleReportUser(socket, payload));
 
         socket.on('request-chat-image-upload', (payload) => this.handleRequestChatImageUpload(socket, payload));
         socket.on('image', (payload) => this.handleImage(socket, payload));
@@ -207,6 +209,33 @@ export class ChatService {
         this.io.to(subRoomName).emit('message', chatMessage);
         await this.adapter.saveMessage(subRoomName, chatMessage);
         this.handleStopTyping(socket);
+    }
+
+    private async handleReportUser(socket: Socket, payload: { reportedUserId: string; reason: any; details?: string }): Promise<void> {
+        const { subRoomName, parentRoom, userId: reporterId } = socket.data;
+        if (!reporterId) return;
+
+        try {
+            let chatContext: ChatMessage[] | undefined = undefined;
+            if (subRoomName) {
+                // Capture last 20 messages as evidence
+                chatContext = await this.adapter.getRecentMessages(subRoomName, 20);
+            }
+
+            await ReportRepository.create({
+                reporterId,
+                reportedUserId: payload.reportedUserId,
+                roomId: parentRoom,
+                reason: payload.reason,
+                details: payload.details,
+                chatContext
+            });
+
+            socket.emit('report-success', 'Reporte enviado correctamente.');
+        } catch (error) {
+            logger.error('Error handling report-user via socket', { error: (error as Error).message });
+            socket.emit('error', 'No se pudo procesar el reporte.');
+        }
     }
 
     private async handleRequestChatImageUpload(socket: Socket, payload: { contentType: string, tempId: string }) {
