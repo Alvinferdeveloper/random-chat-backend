@@ -1,6 +1,6 @@
 import prisma from '../lib/prisma';
 import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
-import { AgeRange, ConversationType } from '@prisma/client'
+import { AgeRange, ConversationType, UserRole } from '@prisma/client'
 import { ProfileInfo } from '@/types/user';
 import logger from '../lib/logger';
 
@@ -214,6 +214,16 @@ export const findAll = async (page: number, limit: number, search?: string) => {
             totalPages: Math.ceil(total / limit)
         }
     };
+};
+
+/**
+ * Updates a user's role.
+ */
+export const updateRole = async (userId: string, role: UserRole) => {
+    return prisma.user.update({
+        where: { id: userId },
+        data: { role }
+    });
 };
 
 /**

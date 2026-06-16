@@ -5,7 +5,8 @@ import {
     getUsers,
     updateUserBanStatus,
     getStats,
-    sendBroadcast
+    sendBroadcast,
+    updateUserRole
 } from "../../controllers/admin.controller";
 import { asyncHandler } from '../../utils/asyncHandler';
 import { validate } from '../../middlewares/validate';
@@ -13,7 +14,8 @@ import {
     getRoomsByStatusSchema,
     updateRoomStatusSchema,
     getUsersSchema,
-    updateUserBanStatusSchema
+    updateUserBanStatusSchema,
+    updateUserRoleSchema
 } from '../../validations/admin.validation';
 import validateSession from "../../middlewares/validateSession";
 import validateAdmin from "../../middlewares/validateAdmin";
@@ -33,6 +35,7 @@ export default (chatService: ChatService) => {
 
     router.get('/users', validate(getUsersSchema), asyncHandler(getUsers));
     router.patch('/users/:userId/ban', validate(updateUserBanStatusSchema), asyncHandler(updateUserBanStatus));
+    router.patch('/users/:userId/role', validate(updateUserRoleSchema), asyncHandler(updateUserRole));
 
     return router;
 };

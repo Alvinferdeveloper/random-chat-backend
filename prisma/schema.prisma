@@ -149,6 +149,7 @@ model FavoriteGif {
 
 enum UserRole {
   USER
+  MODERATOR
   ADMIN
 }
 

@@ -36,3 +36,14 @@ export const updateUserBanStatusSchema = z.object({
         banReason: z.string().max(255).optional(),
     }),
 });
+
+export const updateUserRoleSchema = z.object({
+    params: z.object({
+        userId: z.string(),
+    }),
+    body: z.object({
+        role: z.enum(['USER', 'MODERATOR', 'ADMIN'], {
+            error: "Rol de usuario no válido."
+        }),
+    }),
+});

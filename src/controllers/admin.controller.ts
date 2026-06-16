@@ -90,6 +90,26 @@ export const getUsers = async (req: Request, res: Response) => {
 };
 
 /**
+ * Updates a user's role.
+ */
+export const updateUserRole = async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    const { role } = req.body;
+
+    // Safety: Admin cannot demote themselves
+    if (req.user!.id === userId && role !== 'ADMIN') {
+        throw new ApiError(400, "No puedes degradar tu propio rol de administrador.");
+    }
+
+    const updatedUser = await UserRepository.updateRole(userId, role);
+    res.status(200).json({
+        success: true,
+        message: `Rol de usuario actualizado a ${role.toLowerCase()} correctamente.`,
+        data: updatedUser
+    });
+};
+
+/**
  * Updates a user's ban status.
  */
 export const updateUserBanStatus = async (req: Request, res: Response) => {
