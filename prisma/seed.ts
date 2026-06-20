@@ -159,6 +159,24 @@ async function main() {
     }
     console.log(`✅ ${defaultRooms.length} salas creadas\n`);
 
+    // Seed de settings globales
+    const defaultSettings = [
+        { key: 'room_creation_enabled', value: 'true', description: 'Controla si los usuarios pueden crear nuevas salas' },
+        { key: 'registration_enabled', value: 'true', description: 'Controla si el registro de nuevos usuarios está activo' },
+        { key: 'maintenance_mode', value: 'false', description: 'Modo mantenimiento global (la app muestra pantalla de mantenimiento y solo admite administradores)' },
+        { key: 'chat_enabled', value: 'true', description: 'Controla si la funcionalidad de chat general está activa' }
+    ];
+
+    console.log('⚙️ Creando configuraciones globales...');
+    for (const setting of defaultSettings) {
+        await prisma.globalSetting.upsert({
+            where: { key: setting.key },
+            update: { value: setting.value, description: setting.description },
+            create: { key: setting.key, value: setting.value, description: setting.description },
+        });
+    }
+    console.log(`✅ ${defaultSettings.length} configuraciones globales creadas\n`);
+
     console.log('🎉 Seed completado exitosamente!');
 }
 

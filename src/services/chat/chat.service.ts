@@ -3,10 +3,11 @@ import crypto from 'crypto';
 import sanitizeHtml from 'sanitize-html';
 import { roomExists, getRoomStatus } from '../room.service';
 import { IChatAdapter, ChatMessage } from './adapters/base.adapter';
+import { isFeatureEnabled, SETTING_KEYS } from '../setting.service';
 import * as UserRepository from '../../repositories/user.repository';
 import * as ReportRepository from '../../repositories/report.repository';
 import { supabase } from '@/lib/supabase';
-import ApiError from '@/utils/ApiError';
+import ApiError, { ERROR_MESSAGES } from '@/utils/ApiError';
 import logger from '@/lib/logger';
 
 const sanitizeOptions: sanitizeHtml.IOptions = {
@@ -116,6 +117,21 @@ export class ChatService {
     }
 
     private async joinRoom(socket: Socket, parentRoom: string, clientUsername: string): Promise<void> {
+        const chatEnabled = await isFeatureEnabled(SETTING_KEYS.CHAT_ENABLED);
+        if (!chatEnabled) {
+            socket.emit('error', ERROR_MESSAGES.CHAT_DISABLED);
+            return;
+        }
+
+        const maintenanceMode = await isFeatureEnabled(SETTING_KEYS.MAINTENANCE_MODE, false);
+        if (maintenanceMode) {
+            const userRole = socket.data.user?.role;
+            if (userRole !== 'ADMIN') {
+                socket.emit('error', ERROR_MESSAGES.MAINTENANCE_MODE);
+                return;
+            }
+        }
+
         const roomStatus = await getRoomStatus(parentRoom);
         
         if (!roomStatus.exists) {

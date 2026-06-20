@@ -52,6 +52,21 @@ export const auth = betterAuth({
             }
         })
     ],
+    databaseHooks: {
+        user: {
+            create: {
+                before: async (user) => {
+                    const { isFeatureEnabled, SETTING_KEYS } = await import('../services/setting.service');
+                    const registrationEnabled = await isFeatureEnabled(SETTING_KEYS.REGISTRATION_ENABLED);
+                    if (!registrationEnabled) {
+                        const { ERROR_MESSAGES } = await import('./errorMessages');
+                        throw new Error(ERROR_MESSAGES.REGISTRATION_DISABLED);
+                    }
+                    return { data: user };
+                }
+            }
+        }
+    },
     trustedOrigins: JSON.parse(process.env.ALLOWED_ORIGINS || '[]'),
 });
 

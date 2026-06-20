@@ -6,6 +6,7 @@ import { Room } from '@prisma/client';
 import { getRedisClient } from '../lib/redis';
 import { supabase } from '../lib/supabase';
 import logger from '../lib/logger';
+import { isFeatureEnabled, SETTING_KEYS } from './setting.service';
 
 /**
  * Normalizes a string for similarity comparison.
@@ -62,6 +63,11 @@ const ROOM_LIMITS = {
 };
 
 export const createRoom = async (roomData: Omit<Room, 'id' | 'created_at'>, userId: string): Promise<Room> => {
+    const roomCreationEnabled = await isFeatureEnabled(SETTING_KEYS.ROOM_CREATION_ENABLED);
+    if (!roomCreationEnabled) {
+        throw new ApiError(503, ERROR_MESSAGES.ROOM_CREATION_DISABLED);
+    }
+
     const isRedisActive = process.env.CHAT_ADAPTER === 'redis';
     const redisClient = isRedisActive ? getRedisClient() : null;
     const RATE_LIMIT_KEY = `rate_limit:create_room:${userId}`;

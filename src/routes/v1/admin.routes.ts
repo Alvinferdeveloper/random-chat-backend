@@ -8,6 +8,7 @@ import {
     sendBroadcast,
     updateUserRole
 } from "../../controllers/admin.controller";
+import { getAllSettings, updateSetting } from "../../controllers/setting.controller";
 import { asyncHandler } from '../../utils/asyncHandler';
 import { validate } from '../../middlewares/validate';
 import {
@@ -17,6 +18,7 @@ import {
     updateUserBanStatusSchema,
     updateUserRoleSchema
 } from '../../validations/admin.validation';
+import { updateSettingSchema } from '../../validations/setting.validation';
 import validateSession from "../../middlewares/validateSession";
 import validateAdmin from "../../middlewares/validateAdmin";
 import { ChatService } from "../../services/chat/chat.service";
@@ -37,5 +39,10 @@ export default (chatService: ChatService) => {
     router.patch('/users/:userId/ban', validate(updateUserBanStatusSchema), asyncHandler(updateUserBanStatus));
     router.patch('/users/:userId/role', validate(updateUserRoleSchema), asyncHandler(updateUserRole));
 
+    // Global settings
+    router.get('/settings', asyncHandler(getAllSettings));
+    router.patch('/settings/:key', validate(updateSettingSchema), asyncHandler(updateSetting));
+
     return router;
 };
+

@@ -239,3 +239,12 @@ model Verification {
 
   @@map("verification")
 }
+
+model GlobalSetting {
+  key         String   @id @db.VarChar(50)
+  value       String   @db.Text
+  description String?  @db.VarChar(255)
+  updatedAt   DateTime @updatedAt
+
+  @@map("global_setting")
+}

@@ -26,8 +26,10 @@ import { setRedisAdapter } from '@/services/room-active-users.service';
 import { generalLimiter, authLimiter } from '@/config/rateLimiters';
 import { csrfProtection } from '@/middlewares/csrfProtection';
 import healthRouter from '@/routes/v1/health.routes';
+import settingsRouter from '@/routes/v1/settings.routes';
 import { setupGracefulShutdown } from '@/lib/gracefulShutdown';
 import { requestLogger } from '@/middlewares/requestLogger';
+import validateMaintenance from '@/middlewares/validateMaintenance';
 
 const app = express();
 const allowedOrigins = JSON.parse(process.env.ALLOWED_ORIGINS || '[]');
@@ -86,6 +88,8 @@ app.use(cors({
 
 app.use(csrfProtection);
 
+app.use(validateMaintenance);
+
 app.all("/api/auth/{*any}", authLimiter, toNodeHandler(auth));
 
 app.use(express.json());
@@ -94,6 +98,7 @@ app.use('/api/v1/categories', categoryRouter);
 app.use('/api/v1/admin', adminRouter(chatService));
 app.use('/api/v1/reports', reportRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/settings', settingsRouter);
 app.use(validateSession);
 app.use('/api/v1/hobbies', hobbyRouter);
 app.use('/api/v1/health', healthRouter);

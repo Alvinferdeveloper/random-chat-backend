@@ -111,9 +111,10 @@ La autenticación está totalmente delegada a **better-auth** (librería).
 - **Socket.IO auth**: el middleware de Socket.IO extrae la sesión de los headers de handshake y adjunta `socket.data.user`
 
 **Flujo para rutas protegidas:**
-1. `validateSession` middleware verifica la sesión con `auth.api.getSession()`
-2. Adjunta `req.user` y `req.session` al request
-3. `validateAdmin` verifica que `req.user.role === 'ADMIN'`
+1. `validateMaintenance` verifica si la aplicación está en modo mantenimiento. Si lo está, rechaza la solicitud con un código 503 excepto para administradores (`ADMIN`) y rutas excluidas (/health, /settings, /auth).
+2. `validateSession` middleware verifica la sesión con `auth.api.getSession()`
+3. Adjunta `req.user` y `req.session` al request
+4. `validateAdmin` verifica que `req.user.role === 'ADMIN'`
 
 ---
 
@@ -154,6 +155,8 @@ Todas las rutas tienen prefijo `/api/v1/`.
 | GET | `/users` | Listar usuarios con filtros |
 | PATCH | `/users/:userId/ban` | Banear/desbanear usuario |
 | PATCH | `/users/:userId/role` | Cambiar rol de usuario |
+| GET | `/settings` | Listar todas las configuraciones globales con detalles |
+| PATCH | `/settings/:key` | Actualizar una configuración global |
 
 ### Otros
 
@@ -163,6 +166,7 @@ Todas las rutas tienen prefijo `/api/v1/`.
 | `/api/v1/reports` | Crear reportes de usuarios |
 | `/api/v1/hobbies` | Listar hobbies disponibles |
 | `/api/v1/health` | Health check del servidor y dependencias |
+| `/api/v1/settings` | Obtener configuraciones globales públicas (sin auth) |
 | `/api/auth/*` | Manejado por better-auth (login, signup, OAuth, etc.) |
 
 ---

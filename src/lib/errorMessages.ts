@@ -49,6 +49,12 @@ export const ERROR_MESSAGES = {
     INTERNAL_ERROR: 'An unexpected error occurred, please try again later',
     NOT_FOUND: 'Resource not found',
     ALREADY_EXISTS: 'Resource already exists',
+
+    // Global Settings / Maintenance
+    MAINTENANCE_MODE: 'Site is undergoing maintenance. Please try again later',
+    REGISTRATION_DISABLED: 'User registration is currently disabled by the administrator',
+    CHAT_DISABLED: 'Chat is temporarily disabled',
+    ROOM_CREATION_DISABLED: 'Room creation is temporarily disabled',
 } as const;
 
 export type ErrorKey = keyof typeof ERROR_MESSAGES;
