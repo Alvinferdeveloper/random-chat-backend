@@ -136,4 +136,25 @@ export class InMemoryAdapter implements IChatAdapter {
         }
         return result;
     }
+
+    public static getTotalOnlineUsers(): number {
+        const instance = InMemoryAdapter.getInstance();
+        let total = 0;
+        for (const roomName in instance.roomState) {
+            total += instance.roomState[roomName].subRooms.reduce((acc: number, sr: InMemorySubRoom) => acc + Object.keys(sr.users).length, 0);
+        }
+        return total;
+    }
+
+    public static getTopActiveRooms(limit: number): Array<{ roomId: string; userCount: number }> {
+        const instance = InMemoryAdapter.getInstance();
+        const rooms: Array<{ roomId: string; userCount: number }> = [];
+        for (const roomName in instance.roomState) {
+            const userCount = instance.roomState[roomName].subRooms.reduce((acc: number, sr: InMemorySubRoom) => acc + Object.keys(sr.users).length, 0);
+            if (userCount > 0) {
+                rooms.push({ roomId: roomName, userCount });
+            }
+        }
+        return rooms.sort((a, b) => b.userCount - a.userCount).slice(0, limit);
+    }
 }

@@ -179,4 +179,19 @@ export class RedisAdapter implements IChatAdapter {
         const messages = await this.redis.lrange(messagesKey, 0, limit - 1);
         return messages.map(msg => JSON.parse(msg) as ChatMessage);
     }
+
+    public async getTotalOnlineUsers(): Promise<number> {
+        const state = await this.getInitialState();
+        return Object.values(state).reduce((sum, room) => sum + room.userCount, 0);
+    }
+
+    public async getTopActiveRooms(limit: number): Promise<Array<{ roomId: string; userCount: number }>> {
+        const state = await this.getInitialState();
+        const rooms = Object.entries(state)
+            .map(([roomId, data]) => ({ roomId, userCount: data.userCount }))
+            .filter(r => r.userCount > 0)
+            .sort((a, b) => b.userCount - a.userCount)
+            .slice(0, limit);
+        return rooms;
+    }
 }

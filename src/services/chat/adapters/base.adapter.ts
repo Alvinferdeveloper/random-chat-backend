@@ -80,4 +80,17 @@ export interface IChatAdapter {
      * @returns An array of chat messages, ordered from newest to oldest.
      */
     getRecentMessages(subRoomName: string, limit: number): Promise<ChatMessage[]>;
+
+    /**
+     * Retrieves the total number of online users across all rooms.
+     * @returns Total count of connected users.
+     */
+    getTotalOnlineUsers?(): Promise<number> | number;
+
+    /**
+     * Retrieves the top active rooms sorted by user count.
+     * @param limit - Maximum number of rooms to return.
+     * @returns Array of rooms with their user counts.
+     */
+    getTopActiveRooms?(limit: number): Promise<Array<{ roomId: string; userCount: number }>> | Array<{ roomId: string; userCount: number }>;
 }

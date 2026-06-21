@@ -6,6 +6,9 @@ import { IChatAdapter, ChatMessage } from './adapters/base.adapter';
 import { isFeatureEnabled, SETTING_KEYS } from '../setting.service';
 import * as UserRepository from '../../repositories/user.repository';
 import * as ReportRepository from '../../repositories/report.repository';
+import { getTotalOnlineUsers } from '../../services/room-active-users.service';
+import * as RoomRepository from '../../repositories/room.repository';
+import * as ReportRepo from '../../repositories/report.repository';
 import { supabase } from '@/lib/supabase';
 import ApiError, { ERROR_MESSAGES } from '@/utils/ApiError';
 import logger from '@/lib/logger';
@@ -46,10 +49,51 @@ interface ReplyContext {
 export class ChatService {
     private io: Server;
     private adapter: IChatAdapter;
+    private adminSockets: Set<string> = new Set();
+    private statsInterval: NodeJS.Timeout | null = null;
 
     constructor(io: Server, adapter: IChatAdapter) {
         this.io = io;
         this.adapter = adapter;
+        this.startStatsInterval();
+    }
+
+    private startStatsInterval(): void {
+        this.statsInterval = setInterval(async () => {
+            if (this.adminSockets.size === 0) return;
+
+            try {
+                const startOfToday = new Date();
+                startOfToday.setHours(0, 0, 0, 0);
+
+                const [
+                    onlineUsers,
+                    totalUsers,
+                    newUsersToday,
+                    pendingReports,
+                    activeRooms,
+                    pendingRooms,
+                ] = await Promise.all([
+                    getTotalOnlineUsers(),
+                    UserRepository.countAll(),
+                    UserRepository.countSince(startOfToday),
+                    ReportRepo.countPending(),
+                    RoomRepository.countByStatus('ACCEPTED' as any),
+                    RoomRepository.countByStatus('IN_REVISION' as any),
+                ]);
+
+                this.io.to([...this.adminSockets]).emit('admin-stats-update', {
+                    onlineUsers,
+                    totalUsers,
+                    newUsersToday,
+                    pendingReports,
+                    activeRooms,
+                    pendingRooms,
+                });
+            } catch (error) {
+                logger.error('Error emitting admin stats', { error: (error as Error).message });
+            }
+        }, 10000);
     }
 
     /**
@@ -68,6 +112,22 @@ export class ChatService {
             system: true,
             isGlobal: true
         });
+    }
+
+    public registerAdminSocket(socketId: string): void {
+        this.adminSockets.add(socketId);
+    }
+
+    public unregisterAdminSocket(socketId: string): void {
+        this.adminSockets.delete(socketId);
+    }
+
+    public emitNewReport(payload: { reportedUserId: string; username: string; reason: string }): void {
+        this.io.to([...this.adminSockets]).emit('admin-new-report', payload);
+    }
+
+    public emitNewRoom(payload: { roomId: string; name: string; ownerUsername: string }): void {
+        this.io.to([...this.adminSockets]).emit('admin-room-created', payload);
     }
 
     private async _broadcastUserList(subRoomName: string): Promise<void> {
@@ -245,6 +305,13 @@ export class ChatService {
                 reason: payload.reason,
                 details: payload.details,
                 chatContext
+            });
+
+            const reportedUser = await UserRepository.findProfileById(payload.reportedUserId).catch(() => null);
+            this.emitNewReport({
+                reportedUserId: payload.reportedUserId,
+                username: reportedUser?.username || 'Usuario desconocido',
+                reason: payload.reason,
             });
 
             socket.emit('report-success', 'Reporte enviado correctamente.');

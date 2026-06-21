@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as RoomService from '../services/room.service';
+import { ChatService } from '../services/chat/chat.service';
 import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 
 export const getRooms = async (req: Request, res: Response) => {
@@ -15,7 +16,7 @@ export const getRooms = async (req: Request, res: Response) => {
     res.status(200).json(paginatedData);
 };
 
-export const createRoom = async (req: Request, res: Response) => {
+export const createRoom = (chatService: ChatService) => async (req: Request, res: Response) => {
     const user = req.user;
     if (!user || !user.id) {
         throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
@@ -23,6 +24,13 @@ export const createRoom = async (req: Request, res: Response) => {
 
     const roomData = req.body;
     const newRoom = await RoomService.createRoom(roomData, user.id);
+
+    chatService.emitNewRoom({
+        roomId: newRoom.id,
+        name: newRoom.name,
+        ownerUsername: (user as any).username || 'Desconocido',
+    });
+
     res.status(201).json({ success: true, message: 'Sala creada exitosamente.', data: newRoom });
 };
 

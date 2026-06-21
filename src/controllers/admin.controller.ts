@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
 import * as RoomRepository from '../repositories/room.repository';
 import * as UserRepository from '../repositories/user.repository';
+import * as ReportRepository from '../repositories/report.repository';
 import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 import { RoomStatus } from "@prisma/client";
 import { ChatService } from "../services/chat/chat.service";
+import { getTotalOnlineUsers, getTopActiveRooms } from '../services/room-active-users.service';
 
 /**
  * Sends a global system message to all connected users.
@@ -27,17 +29,58 @@ export const sendBroadcast = (chatService: ChatService) => async (req: Request, 
  * Retrieves general platform statistics.
  */
 export const getStats = async (req: Request, res: Response) => {
-    const [totalUsers, activeRooms, pendingRooms] = await Promise.all([
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const [
+        totalUsers,
+        activeRooms,
+        pendingRooms,
+        onlineUsers,
+        newUsersToday,
+        pendingReports,
+    ] = await Promise.all([
         UserRepository.countAll(),
         RoomRepository.countByStatus('ACCEPTED' as RoomStatus),
         RoomRepository.countByStatus('IN_REVISION' as RoomStatus),
+        getTotalOnlineUsers(),
+        UserRepository.countSince(startOfToday),
+        ReportRepository.countPending(),
     ]);
 
     res.status(200).json({
         totalUsers,
         activeRooms,
         pendingRooms,
+        onlineUsers,
+        newUsersToday,
+        pendingReports,
     });
+};
+
+/**
+ * Retrieves top active rooms with live user counts.
+ */
+export const getActiveRooms = async (req: Request, res: Response) => {
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const rooms = await getTopActiveRooms(limit);
+
+    const enrichedRooms = await Promise.all(
+        rooms.map(async (room) => {
+            const dbRoom = await RoomRepository.findByIdAnyStatus(room.roomId);
+            return {
+                id: room.roomId,
+                name: dbRoom?.name || room.roomId,
+                normalized_name: dbRoom?.normalized_name || room.roomId,
+                short_description: dbRoom?.short_description || '',
+                server_icon: dbRoom?.server_icon || null,
+                userCount: room.count,
+            };
+        })
+    );
+
+    res.status(200).json({ rooms: enrichedRooms });
 };
 
 /**

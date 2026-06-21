@@ -43,3 +43,10 @@ export const getTopActiveRooms = async (limit: number = 10): Promise<{ roomId: s
         .sort((a, b) => b.count - a.count)
         .slice(0, limit);
 };
+
+export const getTotalOnlineUsers = async (): Promise<number> => {
+    if (isRedisActive() && redisAdapterInstance) {
+        return redisAdapterInstance.getTotalOnlineUsers();
+    }
+    return InMemoryAdapter.getTotalOnlineUsers();
+};

@@ -6,7 +6,8 @@ import {
     updateUserBanStatus,
     getStats,
     sendBroadcast,
-    updateUserRole
+    updateUserRole,
+    getActiveRooms
 } from "../../controllers/admin.controller";
 import { getAllSettings, updateSetting } from "../../controllers/setting.controller";
 import { asyncHandler } from '../../utils/asyncHandler';
@@ -29,6 +30,7 @@ export default (chatService: ChatService) => {
     router.use(validateSession, validateAdmin);
 
     router.get('/stats', asyncHandler(getStats));
+    router.get('/rooms/active', asyncHandler(getActiveRooms));
 
     router.post('/broadcast', asyncHandler(sendBroadcast(chatService)));
 

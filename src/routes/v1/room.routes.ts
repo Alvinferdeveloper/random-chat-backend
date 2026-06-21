@@ -23,46 +23,49 @@ import {
 } from '../../validations/room.validation';
 import validateSession from "../../middlewares/validateSession";
 import optionalSession from "../../middlewares/optionalSession";
+import { ChatService } from "../../services/chat/chat.service";
 
-const router = Router();
+export default (chatService: ChatService) => {
+    const router = Router();
 
-router.get('/', optionalSession, listLimiter, validate(getRoomsSchema), asyncHandler(getRooms));
+    router.get('/', optionalSession, listLimiter, validate(getRoomsSchema), asyncHandler(getRooms));
 
-// Protected route to get rooms owned by the user
-router.get('/my-rooms', validateSession, asyncHandler(getUserRooms));
+    // Protected route to get rooms owned by the user
+    router.get('/my-rooms', validateSession, asyncHandler(getUserRooms));
 
-// Protected route to get user's favorite rooms
-router.get('/favorites', validateSession, validate(getUserFavoriteRoomsSchema), asyncHandler(getUserFavoriteRooms));
+    // Protected route to get user's favorite rooms
+    router.get('/favorites', validateSession, validate(getUserFavoriteRoomsSchema), asyncHandler(getUserFavoriteRooms));
 
-// Protected route to create a new room
-router.post(
-    '/',
-    validateSession,
-    createRoomLimiter,
-    validate(createRoomSchema),
-    asyncHandler(createRoom)
-);
+    // Protected route to create a new room
+    router.post(
+        '/',
+        validateSession,
+        createRoomLimiter,
+        validate(createRoomSchema),
+        asyncHandler(createRoom(chatService))
+    );
 
-// Protected route to toggle a room as favorite
-router.post('/:roomId/favorite', validateSession, validate(toggleFavoriteRoomSchema), asyncHandler(toggleFavoriteRoom));
+    // Protected route to toggle a room as favorite
+    router.post('/:roomId/favorite', validateSession, validate(toggleFavoriteRoomSchema), asyncHandler(toggleFavoriteRoom));
 
-// Protected route to record user activity in a room
-router.post('/:roomId/activity', validateSession, validate(recordRoomActivitySchema), asyncHandler(recordRoomActivity));
+    // Protected route to record user activity in a room
+    router.post('/:roomId/activity', validateSession, validate(recordRoomActivitySchema), asyncHandler(recordRoomActivity));
 
-// Protected route to generate a pre-signed URL for a room's image
-router.post(
-    '/:roomId/generate-upload-url',
-    validateSession,
-    validate(generateRoomUploadUrlSchema),
-    asyncHandler(generateRoomUploadUrl)
-);
+    // Protected route to generate a pre-signed URL for a room's image
+    router.post(
+        '/:roomId/generate-upload-url',
+        validateSession,
+        validate(generateRoomUploadUrlSchema),
+        asyncHandler(generateRoomUploadUrl)
+    );
 
-// Protected route to update a room's attributes (e.g., banner/icon URL)
-router.patch(
-    '/:roomId',
-    validateSession,
-    validate(updateRoomSchema),
-    asyncHandler(updateRoom)
-);
+    // Protected route to update a room's attributes (e.g., banner/icon URL)
+    router.patch(
+        '/:roomId',
+        validateSession,
+        validate(updateRoomSchema),
+        asyncHandler(updateRoom)
+    );
 
-export default router;
+    return router;
+};

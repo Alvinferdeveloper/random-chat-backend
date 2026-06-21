@@ -173,6 +173,19 @@ export const countAll = async () => {
 };
 
 /**
+ * Counts users created since a given date.
+ */
+export const countSince = async (since: Date) => {
+    return prisma.user.count({
+        where: {
+            createdAt: {
+                gte: since
+            }
+        }
+    });
+};
+
+/**
  * Finds all users with pagination and search.
  */
 export const findAll = async (page: number, limit: number, search?: string) => {

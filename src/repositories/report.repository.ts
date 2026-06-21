@@ -27,6 +27,15 @@ export const create = async (data: {
 };
 
 /**
+ * Counts pending reports.
+ */
+export const countPending = async () => {
+    return prisma.report.count({
+        where: { status: 'PENDING' }
+    });
+};
+
+/**
  * Retrieves pending reports grouped by reported user to highlight top offenders.
  */
 export const getTopOffenders = async (page: number, limit: number) => {

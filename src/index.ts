@@ -93,7 +93,7 @@ app.use(validateMaintenance);
 app.all("/api/auth/{*any}", authLimiter, toNodeHandler(auth));
 
 app.use(express.json());
-app.use('/api/v1/rooms', roomRouter);
+app.use('/api/v1/rooms', roomRouter(chatService));
 app.use('/api/v1/categories', categoryRouter);
 app.use('/api/v1/admin', adminRouter(chatService));
 app.use('/api/v1/reports', reportRouter);
@@ -155,6 +155,11 @@ function setupSocketHandlers(io: Server, chatService: ChatService) {
     io.on('connection', (socket) => {
         socketMessageCounts.set(socket.id, { count: 0, resetTime: Date.now() + RATE_WINDOW_MS });
 
+        // Track admin sockets
+        if (socket.data.user?.role === 'ADMIN') {
+            chatService.registerAdminSocket(socket.id);
+        }
+
         socket.use((event, next) => {
             if (RATE_LIMITED_EVENTS.includes(event[0])) {
                 const clientData = socketMessageCounts.get(socket.id);
@@ -173,6 +178,7 @@ function setupSocketHandlers(io: Server, chatService: ChatService) {
         });
 
         socket.on('disconnect', () => {
+            chatService.unregisterAdminSocket(socket.id);
             socketMessageCounts.delete(socket.id);
         });
 
