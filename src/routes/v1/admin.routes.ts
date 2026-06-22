@@ -7,7 +7,8 @@ import {
     getStats,
     sendBroadcast,
     updateUserRole,
-    getActiveRooms
+    getActiveRooms,
+    getUserDetails
 } from "../../controllers/admin.controller";
 import { getAllSettings, updateSetting } from "../../controllers/setting.controller";
 import { asyncHandler } from '../../utils/asyncHandler';
@@ -38,6 +39,7 @@ export default (chatService: ChatService) => {
     router.patch('/rooms/:roomId/status', validate(updateRoomStatusSchema), asyncHandler(updateRoomStatus));
 
     router.get('/users', validate(getUsersSchema), asyncHandler(getUsers));
+    router.get('/users/:userId/details', asyncHandler(getUserDetails));
     router.patch('/users/:userId/ban', validate(updateUserBanStatusSchema), asyncHandler(updateUserBanStatus));
     router.patch('/users/:userId/role', validate(updateUserRoleSchema), asyncHandler(updateUserRole));
 

@@ -129,3 +129,21 @@ export const updateStatusByReportedUser = async (reportedUserId: string, status:
         data: { status }
     });
 };
+
+/**
+ * Retrieves reports made by a specific user (as reporter).
+ */
+export const findByReporter = async (reporterId: string) => {
+    return prisma.report.findMany({
+        where: { reporterId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+            reportedUser: {
+                select: { username: true }
+            },
+            room: {
+                select: { name: true }
+            }
+        }
+    });
+};

@@ -412,6 +412,28 @@ export const findAllByStatus = async (status: 'IN_REVISION' | 'ACCEPTED' | 'REJE
 };
 
 /**
+ * Finds multiple rooms by their IDs.
+ */
+export const findByIds = async (ids: string[]) => {
+    if (!ids.length) return [];
+    try {
+        return await prisma.room.findMany({
+            where: { id: { in: ids }, deletedAt: null },
+            select: {
+                id: true,
+                name: true,
+                normalized_name: true,
+                short_description: true,
+                server_icon: true,
+                status: true,
+            }
+        });
+    } catch (error) {
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
+    }
+};
+
+/**
  * Updates the status of a room.
  * @param roomId - The ID of the room.
  * @param status - The new status.

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import * as RoomRepository from '../repositories/room.repository';
 import * as UserRepository from '../repositories/user.repository';
 import * as ReportRepository from '../repositories/report.repository';
+import * as UserActivityRepository from '../repositories/user-room-activity.repository';
 import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 import { RoomStatus } from "@prisma/client";
 import { ChatService } from "../services/chat/chat.service";
@@ -164,5 +165,41 @@ export const updateUserBanStatus = async (req: Request, res: Response) => {
         success: true,
         message: `Usuario ${isBanned ? 'baneado' : 'desbaneado'} correctamente.`,
         data: updatedUser
+    });
+};
+
+/**
+ * Retrieves detailed information about a specific user for the admin panel.
+ */
+export const getUserDetails = async (req: Request, res: Response) => {
+    const { userId } = req.params;
+
+    const user = await UserRepository.findProfileById(userId);
+
+    const [
+        ownedRooms,
+        recentActivity,
+        reportsReceived,
+        reportsMade,
+    ] = await Promise.all([
+        RoomRepository.findByOwnerId(userId),
+        UserActivityRepository.getUserRecentActivity(userId, 10),
+        ReportRepository.findByReportedUser(userId),
+        ReportRepository.findByReporter(userId),
+    ]);
+
+    const roomIds = recentActivity.map(a => a.roomId);
+    const activityRooms = roomIds.length > 0 ? await RoomRepository.findByIds(roomIds) : [];
+    const activityWithRoom = recentActivity.map(a => ({
+        ...a,
+        room: activityRooms.find(r => r.id === a.roomId) || null,
+    }));
+
+    res.status(200).json({
+        user,
+        ownedRooms,
+        recentActivity: activityWithRoom,
+        reportsReceived,
+        reportsMade,
     });
 };
