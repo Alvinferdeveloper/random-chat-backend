@@ -174,6 +174,39 @@ export class RedisAdapter implements IChatAdapter {
         await this.redis.ltrim(messagesKey, 0, MAX_MESSAGES_HISTORY - 1);
     }
 
+    public async updateMessage(subRoomName: string, messageId: string, updates: Partial<Pick<ChatMessage, 'message'>>): Promise<void> {
+        const messagesKey = `messages:${subRoomName}`;
+        const messages = await this.redis.lrange(messagesKey, 0, -1);
+
+        for (let i = 0; i < messages.length; i++) {
+            const msg = JSON.parse(messages[i]) as ChatMessage;
+            if (msg.id === messageId) {
+                if (updates.message !== undefined) {
+                    msg.message = updates.message;
+                }
+                msg.edited = true;
+                await this.redis.lset(messagesKey, i, JSON.stringify(msg));
+                break;
+            }
+        }
+    }
+
+    public async deleteMessage(subRoomName: string, messageId: string): Promise<void> {
+        const messagesKey = `messages:${subRoomName}`;
+        const messages = await this.redis.lrange(messagesKey, 0, -1);
+        const filtered = messages.filter(msg => {
+            const parsed = JSON.parse(msg) as ChatMessage;
+            return parsed.id !== messageId;
+        });
+
+        if (filtered.length < messages.length) {
+            await this.redis.del(messagesKey);
+            if (filtered.length > 0) {
+                await this.redis.rpush(messagesKey, ...filtered);
+            }
+        }
+    }
+
     public async getRecentMessages(subRoomName: string, limit: number): Promise<ChatMessage[]> {
         const messagesKey = `messages:${subRoomName}`;
         const messages = await this.redis.lrange(messagesKey, 0, limit - 1);

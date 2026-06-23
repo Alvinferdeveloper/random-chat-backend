@@ -29,6 +29,7 @@ export interface ChatMessage {
     replyTo?: ReplyContext;
     reactions: string[];
     timestamp: string;
+    edited?: boolean;
 }
 
 export interface ReplyContext {
@@ -72,6 +73,21 @@ export interface IChatAdapter {
      * @param message - The message object to save.
      */
     saveMessage(subRoomName: string, message: ChatMessage): Promise<void>;
+
+    /**
+     * Updates a message in the chat history for a specific sub-room.
+     * @param subRoomName - The sub-room where the message is.
+     * @param messageId - The ID of the message to update.
+     * @param updates - The fields to update.
+     */
+    updateMessage(subRoomName: string, messageId: string, updates: Partial<Pick<ChatMessage, 'message'>>): Promise<void>;
+
+    /**
+     * Deletes a message from the chat history for a specific sub-room.
+     * @param subRoomName - The sub-room where the message is.
+     * @param messageId - The ID of the message to delete.
+     */
+    deleteMessage(subRoomName: string, messageId: string): Promise<void>;
 
     /**
      * Retrieves the last N messages from the chat history for a specific sub-room.

@@ -109,6 +109,30 @@ export class InMemoryAdapter implements IChatAdapter {
         }
     }
 
+    public async updateMessage(subRoomName: string, messageId: string, updates: Partial<Pick<ChatMessage, 'message'>>): Promise<void> {
+        const messages = this.messageHistory[subRoomName];
+        if (!messages) return;
+
+        const index = messages.findIndex(m => m.id === messageId);
+        if (index === -1) return;
+
+        const message = messages[index];
+        if (updates.message !== undefined) {
+            message.message = updates.message;
+        }
+        message.edited = true;
+    }
+
+    public async deleteMessage(subRoomName: string, messageId: string): Promise<void> {
+        const messages = this.messageHistory[subRoomName];
+        if (!messages) return;
+
+        const index = messages.findIndex(m => m.id === messageId);
+        if (index === -1) return;
+
+        messages.splice(index, 1);
+    }
+
     public async getRecentMessages(subRoomName: string, limit: number): Promise<ChatMessage[]> {
         const messages = this.messageHistory[subRoomName] || [];
         return messages.slice(0, limit);

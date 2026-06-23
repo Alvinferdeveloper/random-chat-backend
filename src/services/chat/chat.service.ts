@@ -166,6 +166,8 @@ export class ChatService {
         socket.on('gif', (payload) => this.handleGif(socket, payload));
 
         socket.on('send_reaction', (payload) => this.handleSendReaction(socket, payload));
+        socket.on('edit-message', (payload) => this.handleEditMessage(socket, payload));
+        socket.on('delete-message', (payload) => this.handleDeleteMessage(socket, payload));
         socket.on('start-typing', () => this.handleStartTyping(socket));
         socket.on('stop-typing', () => this.handleStopTyping(socket));
         socket.on('disconnecting', () => this.handleDisconnect(socket));
@@ -439,6 +441,63 @@ export class ChatService {
         this.io.to(subRoomName).emit('gif', chatMessage);
         await this.adapter.saveMessage(subRoomName, chatMessage);
         this.handleStopTyping(socket);
+    }
+
+    private async handleEditMessage(socket: Socket, payload: { messageId: string; message: string }): Promise<void> {
+        const { subRoomName, username } = socket.data;
+        if (!subRoomName || !username) {
+            socket.emit('error', 'No estás en una sala');
+            return;
+        }
+
+        const recentMessages = await this.adapter.getRecentMessages(subRoomName, 100);
+        const targetMessage = recentMessages.find(m => m.id === payload.messageId);
+
+        if (!targetMessage) {
+            socket.emit('error', 'Mensaje no encontrado');
+            return;
+        }
+
+        if (targetMessage.username !== username) {
+            socket.emit('error', 'No puedes editar mensajes de otros usuarios');
+            return;
+        }
+
+        const sanitizedMessage = sanitizeHtml(payload.message, sanitizeOptions);
+        await this.adapter.updateMessage(subRoomName, payload.messageId, { message: sanitizedMessage });
+
+        this.io.to(subRoomName).emit('message-edited', {
+            id: payload.messageId,
+            message: sanitizedMessage,
+            edited: true,
+        });
+    }
+
+    private async handleDeleteMessage(socket: Socket, payload: { messageId: string }): Promise<void> {
+        const { subRoomName, username } = socket.data;
+        if (!subRoomName || !username) {
+            socket.emit('error', 'No estás en una sala');
+            return;
+        }
+
+        const recentMessages = await this.adapter.getRecentMessages(subRoomName, 100);
+        const targetMessage = recentMessages.find(m => m.id === payload.messageId);
+
+        if (!targetMessage) {
+            socket.emit('error', 'Mensaje no encontrado');
+            return;
+        }
+
+        if (targetMessage.username !== username) {
+            socket.emit('error', 'No puedes eliminar mensajes de otros usuarios');
+            return;
+        }
+
+        await this.adapter.deleteMessage(subRoomName, payload.messageId);
+
+        this.io.to(subRoomName).emit('message-deleted', {
+            id: payload.messageId,
+        });
     }
 
     private handleSendReaction(socket: Socket, payload: { messageId: string; emoji: string }): void {
