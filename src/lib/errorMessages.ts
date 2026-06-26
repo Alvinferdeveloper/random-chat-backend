@@ -1,63 +1,63 @@
 export const ERROR_MESSAGES = {
     // Auth
-    UNAUTHORIZED: 'User not authenticated',
-    INVALID_SESSION: 'Invalid session',
-    FORBIDDEN: 'Access denied',
-    SESSION_EXPIRED: 'Session expired',
+    UNAUTHORIZED: 'UNAUTHORIZED',
+    INVALID_SESSION: 'INVALID_SESSION',
+    FORBIDDEN: 'FORBIDDEN',
+    SESSION_EXPIRED: 'SESSION_EXPIRED',
 
     // Users
-    USER_NOT_FOUND: 'User not found',
-    USERNAME_TAKEN: 'Username already taken',
-    EMAIL_TAKEN: 'Email already in use',
-    INVALID_HOBBIES: 'One or more selected hobbies are invalid',
+    USER_NOT_FOUND: 'USER_NOT_FOUND',
+    USERNAME_TAKEN: 'USERNAME_TAKEN',
+    EMAIL_TAKEN: 'EMAIL_TAKEN',
+    INVALID_HOBBIES: 'INVALID_HOBBIES',
 
     // Rooms
-    ROOM_NOT_FOUND: 'Room not found',
-    ROOM_NAME_TAKEN: 'Room name already taken',
-    ROOM_NAME_TOO_SHORT: 'Room name must be at least 3 characters',
-    ROOM_NAME_TOO_LONG: 'Room name must be less than 45 characters',
-    NOT_ROOM_OWNER: 'You are not the owner of this room',
-    ROOM_ALREADY_REJECTED: 'Room has already been rejected',
-    ROOM_ALREADY_ACCEPTED: 'Room has already been accepted',
-    ROOM_ALREADY_EXISTS: 'A room with a very similar name already exists',
-    DAILY_LIMIT_REACHED: 'Daily limit reached',
-    INVALID_CATEGORIES: 'One or more selected categories are invalid',
+    ROOM_NOT_FOUND: 'ROOM_NOT_FOUND',
+    ROOM_NAME_TAKEN: 'ROOM_NAME_TAKEN',
+    ROOM_NAME_TOO_SHORT: 'ROOM_NAME_TOO_SHORT',
+    ROOM_NAME_TOO_LONG: 'ROOM_NAME_TOO_LONG',
+    NOT_ROOM_OWNER: 'NOT_ROOM_OWNER',
+    ROOM_ALREADY_REJECTED: 'ROOM_ALREADY_REJECTED',
+    ROOM_ALREADY_ACCEPTED: 'ROOM_ALREADY_ACCEPTED',
+    ROOM_ALREADY_EXISTS: 'ROOM_ALREADY_EXISTS',
+    DAILY_LIMIT_REACHED: 'DAILY_LIMIT_REACHED',
+    INVALID_CATEGORIES: 'INVALID_CATEGORIES',
 
     // Validation
-    INVALID_INPUT: 'Invalid input provided',
-    FIELD_NOT_ALLOWED: 'Field not allowed for update',
-    INVALID_URL: 'Invalid URL provided',
-    INVALID_EMAIL: 'Invalid email format',
-    INVALID_UUID: 'Invalid ID format',
-    MISSING_FIELDS: 'Missing required fields',
+    INVALID_INPUT: 'INVALID_INPUT',
+    FIELD_NOT_ALLOWED: 'FIELD_NOT_ALLOWED',
+    INVALID_URL: 'INVALID_URL',
+    INVALID_EMAIL: 'INVALID_EMAIL',
+    INVALID_UUID: 'INVALID_UUID',
+    MISSING_FIELDS: 'MISSING_FIELDS',
 
     // Pagination
-    INVALID_PAGE: 'Page must be a positive number',
-    INVALID_LIMIT: 'Limit must be between 1 and 100',
+    INVALID_PAGE: 'INVALID_PAGE',
+    INVALID_LIMIT: 'INVALID_LIMIT',
 
     // Storage
-    STORAGE_UNAVAILABLE: 'Storage service temporarily unavailable',
-    UPLOAD_FAILED: 'File upload failed',
-    IMAGE_UPLOAD_FAILED: 'Image upload failed',
-    AUDIO_UPLOAD_FAILED: 'Audio upload failed',
+    STORAGE_UNAVAILABLE: 'STORAGE_UNAVAILABLE',
+    UPLOAD_FAILED: 'UPLOAD_FAILED',
+    IMAGE_UPLOAD_FAILED: 'IMAGE_UPLOAD_FAILED',
+    AUDIO_UPLOAD_FAILED: 'AUDIO_UPLOAD_FAILED',
 
     // Database
-    DB_ERROR: 'An unexpected error occurred, please try again later',
-    DB_UNAVAILABLE: 'Database service temporarily unavailable',
+    DB_ERROR: 'DB_ERROR',
+    DB_UNAVAILABLE: 'DB_UNAVAILABLE',
 
     // General
-    INTERNAL_ERROR: 'An unexpected error occurred, please try again later',
-    NOT_FOUND: 'Resource not found',
-    ALREADY_EXISTS: 'Resource already exists',
+    INTERNAL_ERROR: 'INTERNAL_ERROR',
+    NOT_FOUND: 'NOT_FOUND',
+    ALREADY_EXISTS: 'ALREADY_EXISTS',
 
     // Categories
-    CATEGORY_NAME_TAKEN: 'Ya existe una categoria con ese nombre',
+    CATEGORY_NAME_TAKEN: 'CATEGORY_NAME_TAKEN',
 
     // Global Settings / Maintenance
-    MAINTENANCE_MODE: 'Site is undergoing maintenance. Please try again later',
-    REGISTRATION_DISABLED: 'User registration is currently disabled by the administrator',
-    CHAT_DISABLED: 'Chat is temporarily disabled',
-    ROOM_CREATION_DISABLED: 'Room creation is temporarily disabled',
+    MAINTENANCE_MODE: 'MAINTENANCE_MODE',
+    REGISTRATION_DISABLED: 'REGISTRATION_DISABLED',
+    CHAT_DISABLED: 'CHAT_DISABLED',
+    ROOM_CREATION_DISABLED: 'ROOM_CREATION_DISABLED',
 } as const;
 
 export type ErrorKey = keyof typeof ERROR_MESSAGES;
