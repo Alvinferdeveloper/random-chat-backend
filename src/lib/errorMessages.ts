@@ -50,6 +50,9 @@ export const ERROR_MESSAGES = {
     NOT_FOUND: 'Resource not found',
     ALREADY_EXISTS: 'Resource already exists',
 
+    // Categories
+    CATEGORY_NAME_TAKEN: 'Ya existe una categoria con ese nombre',
+
     // Global Settings / Maintenance
     MAINTENANCE_MODE: 'Site is undergoing maintenance. Please try again later',
     REGISTRATION_DISABLED: 'User registration is currently disabled by the administrator',

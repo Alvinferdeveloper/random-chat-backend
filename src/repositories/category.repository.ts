@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma';
 import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 
@@ -69,6 +70,9 @@ export const create = async (data: { name: string, icon?: string }) => {
     try {
         return await prisma.category.create({ data });
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+            throw new ApiError(409, ERROR_MESSAGES.CATEGORY_NAME_TAKEN);
+        }
         throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };
@@ -80,6 +84,9 @@ export const update = async (id: string, data: { name?: string, icon?: string })
             data
         });
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+            throw new ApiError(409, ERROR_MESSAGES.CATEGORY_NAME_TAKEN);
+        }
         throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
     }
 };
