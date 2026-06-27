@@ -37,14 +37,39 @@ export const countPending = async () => {
 
 /**
  * Retrieves pending reports grouped by reported user to highlight top offenders.
+ * @param page - The page number.
+ * @param limit - The items per page.
+ * @param search - Optional search by username or email.
  */
-export const getTopOffenders = async (page: number, limit: number) => {
+export const getTopOffenders = async (page: number, limit: number, search?: string) => {
     const skip = (page - 1) * limit;
+
+    // Build the where clause for reports
+    const reportWhere: any = { status: 'PENDING' };
+
+    // If search is provided, first find matching user IDs
+    if (search) {
+        const matchingUsers = await prisma.user.findMany({
+            where: {
+                OR: [
+                    { username: { contains: search } },
+                    { email: { contains: search } },
+                    { name: { contains: search } },
+                ]
+            },
+            select: { id: true }
+        });
+        const userIds = matchingUsers.map(u => u.id);
+        if (userIds.length === 0) {
+            return { offenders: [], pagination: { total: 0, page, limit, totalPages: 0 } };
+        }
+        reportWhere.reportedUserId = { in: userIds };
+    }
 
     // Group by reportedUserId and count PENDING reports
     const groupedReports = await prisma.report.groupBy({
         by: ['reportedUserId'],
-        where: { status: 'PENDING' },
+        where: reportWhere,
         _count: {
             _all: true
         },
@@ -88,7 +113,7 @@ export const getTopOffenders = async (page: number, limit: number) => {
 
     const totalOffenders = await prisma.report.groupBy({
         by: ['reportedUserId'],
-        where: { status: 'PENDING' }
+        where: reportWhere
     });
 
     return {
