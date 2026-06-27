@@ -186,17 +186,34 @@ export const countSince = async (since: Date) => {
 };
 
 /**
- * Finds all users with pagination and search.
+ * Finds all users with pagination and optional filters.
+ * @param page - The page number.
+ * @param limit - The items per page.
+ * @param search - Optional search by username/email/name.
+ * @param role - Optional role filter (ADMIN, MODERATOR, USER).
+ * @param banned - Optional banned filter ('true' or 'false').
  */
-export const findAll = async (page: number, limit: number, search?: string) => {
+export const findAll = async (page: number, limit: number, search?: string, role?: string, banned?: string) => {
     const skip = (page - 1) * limit;
-    const where = search ? {
-        OR: [
+    const where: any = {};
+
+    if (search) {
+        where.OR = [
             { username: { contains: search } },
             { email: { contains: search } },
             { name: { contains: search } },
-        ]
-    } : {};
+        ];
+    }
+
+    if (role) {
+        where.role = role;
+    }
+
+    if (banned === 'true') {
+        where.isBanned = true;
+    } else if (banned === 'false') {
+        where.isBanned = false;
+    }
 
     const [users, total] = await Promise.all([
         prisma.user.findMany({

@@ -128,9 +128,11 @@ export const updateRoomStatus = async (req: Request, res: Response) => {
 export const getUsers = async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    const search = req.query.search as string;
+    const search = req.query.search as string | undefined;
+    const role = req.query.role as string | undefined;
+    const banned = req.query.banned as string | undefined;
 
-    const data = await UserRepository.findAll(page, limit, search);
+    const data = await UserRepository.findAll(page, limit, search, role, banned);
     res.status(200).json(data);
 };
 
