@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const getRoomsByStatusSchema = z.object({
     query: z.object({
-        status: z.enum(['IN_REVISION', 'ACCEPTED', 'REJECTED']).optional().default('IN_REVISION'),
+        status: z.enum(['IN_REVISION', 'ACCEPTED', 'REJECTED', "ALL"]).optional().default('IN_REVISION'),
         page: z.coerce.number().int().positive().optional().default(1),
         limit: z.coerce.number().int().positive().max(100).optional().default(10),
     }),

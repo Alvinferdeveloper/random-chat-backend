@@ -373,16 +373,20 @@ export const findByOwnerId = async (ownerId: string): Promise<Room[]> => {
 
 /**
  * Retrieves a paginated list of rooms by status.
- * @param status - The room status to filter by.
+ * @param status - The room status to filter by. If null, returns all non-deleted rooms.
  * @param page - The page number.
  * @param limit - The items per page.
  */
-export const findAllByStatus = async (status: 'IN_REVISION' | 'ACCEPTED' | 'REJECTED', page: number, limit: number) => {
+export const findAllByStatus = async (status: 'IN_REVISION' | 'ACCEPTED' | 'REJECTED' | null, page: number, limit: number) => {
     try {
         const skip = (page - 1) * limit;
+        const where: any = { deletedAt: null };
+        if (status) {
+            where.status = status;
+        }
         const [rooms, totalItems] = await prisma.$transaction([
             prisma.room.findMany({
-                where: { status, deletedAt: null },
+                where,
                 orderBy: { created_at: 'desc' },
                 skip,
                 take: limit,
@@ -392,18 +396,15 @@ export const findAllByStatus = async (status: 'IN_REVISION' | 'ACCEPTED' | 'REJE
                     }
                 }
             }),
-            prisma.room.count({
-                where: { status, deletedAt: null }
-            })
+            prisma.room.count({ where })
         ]);
 
         return {
             data: rooms,
-            pagination: {
-                currentPage: page,
+            meta: {
+                page,
                 totalPages: Math.ceil(totalItems / limit),
-                totalItems,
-                hasNextPage: page < Math.ceil(totalItems / limit)
+                total: totalItems,
             }
         };
     } catch (error) {

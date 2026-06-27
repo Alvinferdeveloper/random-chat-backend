@@ -88,16 +88,17 @@ export const getActiveRooms = async (req: Request, res: Response) => {
  * Retrieves rooms by status (pending, accepted, rejected).
  */
 export const getRoomsByStatus = async (req: Request, res: Response) => {
-    const status = (req.query.status as any) || 'IN_REVISION';
+    const statusParam = (req.query.status as string) || 'IN_REVISION';
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
-    const validStatuses = ['IN_REVISION', 'ACCEPTED', 'REJECTED'];
-    if (!validStatuses.includes(status)) {
+    const validStatuses = ['IN_REVISION', 'ACCEPTED', 'REJECTED', 'ALL'];
+    if (!validStatuses.includes(statusParam)) {
         throw new ApiError(400, ERROR_MESSAGES.INVALID_INPUT);
     }
 
-    const data = await RoomRepository.findAllByStatus(status, page, limit);
+    const dbStatus = statusParam === 'ALL' ? null : statusParam as 'IN_REVISION' | 'ACCEPTED' | 'REJECTED';
+    const data = await RoomRepository.findAllByStatus(dbStatus, page, limit);
     res.status(200).json(data);
 };
 
