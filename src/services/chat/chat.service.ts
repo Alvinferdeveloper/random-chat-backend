@@ -23,6 +23,10 @@ const ALLOWED_MEDIA_DOMAINS = [
     'storage.googleapis.com',
     'supabase.co',
     'media4.giphy.com',
+    'media0.giphy.com',
+    'media1.giphy.com',
+    'media2.giphy.com',
+    'media3.giphy.com',
     'i.giphy.com'
 ];
 
@@ -195,7 +199,7 @@ export class ChatService {
         }
 
         const roomStatus = await getRoomStatus(parentRoom);
-        
+
         if (!roomStatus.exists) {
             socket.emit('error', 'La sala no existe');
             return;
