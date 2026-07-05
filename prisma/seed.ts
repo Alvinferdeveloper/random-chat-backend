@@ -164,7 +164,11 @@ async function main() {
         { key: 'room_creation_enabled', value: 'true', description: 'Controla si los usuarios pueden crear nuevas salas' },
         { key: 'registration_enabled', value: 'true', description: 'Controla si el registro de nuevos usuarios está activo' },
         { key: 'maintenance_mode', value: 'false', description: 'Modo mantenimiento global (la app muestra pantalla de mantenimiento y solo admite administradores)' },
-        { key: 'chat_enabled', value: 'true', description: 'Controla si la funcionalidad de chat general está activa' }
+        { key: 'chat_enabled', value: 'true', description: 'Controla si la funcionalidad de chat general está activa' },
+        { key: 'chat_gifs_enabled', value: 'true', description: 'Habilita o deshabilita el envío de GIFs en el chat' },
+        { key: 'chat_images_enabled', value: 'true', description: 'Habilita o deshabilita el envío de imágenes en el chat' },
+        { key: 'chat_audio_enabled', value: 'true', description: 'Habilita o deshabilita las notas de voz en el chat' },
+        { key: 'chat_files_enabled', value: 'true', description: 'Habilita o deshabilita el envío de archivos en el chat' },
     ];
 
     console.log('⚙️ Creando configuraciones globales...');

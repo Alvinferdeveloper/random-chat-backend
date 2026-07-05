@@ -12,6 +12,10 @@ export const SETTING_KEYS = {
     REGISTRATION_ENABLED: 'registration_enabled',
     MAINTENANCE_MODE: 'maintenance_mode',
     CHAT_ENABLED: 'chat_enabled',
+    CHAT_GIFS_ENABLED: 'chat_gifs_enabled',
+    CHAT_IMAGES_ENABLED: 'chat_images_enabled',
+    CHAT_AUDIO_ENABLED: 'chat_audio_enabled',
+    CHAT_FILES_ENABLED: 'chat_files_enabled',
 } as const;
 
 export type SettingKey = typeof SETTING_KEYS[keyof typeof SETTING_KEYS];
