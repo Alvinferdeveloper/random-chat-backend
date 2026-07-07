@@ -225,6 +225,18 @@ export const getUserRooms = async (userId: string) => {
 };
 
 /**
+ * Retrieves paginated rooms created by a specific user, with optional status filter.
+ * @param userId - The ID of the user.
+ * @param page - The page number.
+ * @param limit - The items per page.
+ * @param status - Optional status filter.
+ * @returns Paginated room data.
+ */
+export const getUserRoomsPaginated = async (userId: string, page: number, limit: number, status?: 'IN_REVISION' | 'ACCEPTED' | 'REJECTED') => {
+    return RoomRepository.findByOwnerIdPaginated(userId, page, limit, status);
+};
+
+/**
  * Toggles a room as favorite for a user.
  * @param userId - The ID of the user.
  * @param roomId - The ID of the room.

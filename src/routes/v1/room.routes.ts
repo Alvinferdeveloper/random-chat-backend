@@ -19,7 +19,8 @@ import {
     updateRoomSchema,
     toggleFavoriteRoomSchema,
     recordRoomActivitySchema,
-    getUserFavoriteRoomsSchema
+    getUserFavoriteRoomsSchema,
+    getUserRoomsSchema
 } from '../../validations/room.validation';
 import validateSession from "../../middlewares/validateSession";
 import optionalSession from "../../middlewares/optionalSession";
@@ -31,7 +32,7 @@ export default (chatService: ChatService) => {
     router.get('/', optionalSession, listLimiter, validate(getRoomsSchema), asyncHandler(getRooms));
 
     // Protected route to get rooms owned by the user
-    router.get('/my-rooms', validateSession, asyncHandler(getUserRooms));
+    router.get('/my-rooms', validateSession, validate(getUserRoomsSchema), asyncHandler(getUserRooms));
 
     // Protected route to get user's favorite rooms
     router.get('/favorites', validateSession, validate(getUserFavoriteRoomsSchema), asyncHandler(getUserFavoriteRooms));

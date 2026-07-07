@@ -77,6 +77,14 @@ export const recordRoomActivitySchema = z.object({
     }),
 });
 
+export const getUserRoomsSchema = z.object({
+    query: z.object({
+        page: z.coerce.number().int().positive().optional().default(1),
+        limit: z.coerce.number().int().positive().max(100).optional().default(10),
+        status: z.enum(['IN_REVISION', 'ACCEPTED', 'REJECTED']).optional(),
+    }),
+});
+
 export const getUserFavoriteRoomsSchema = z.object({
     query: z.object({
         page: z.coerce.number().int().positive().optional().default(1),

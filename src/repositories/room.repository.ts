@@ -372,6 +372,74 @@ export const findByOwnerId = async (ownerId: string): Promise<Room[]> => {
 };
 
 /**
+ * Retrieves paginated rooms belonging to a specific owner, with optional status filter.
+ * @param ownerId - The ID of the owner user.
+ * @param page - The page number.
+ * @param limit - The items per page.
+ * @param status - Optional status filter.
+ * @returns Paginated room data.
+ */
+export const findByOwnerIdPaginated = async (ownerId: string, page: number, limit: number, status?: 'IN_REVISION' | 'ACCEPTED' | 'REJECTED') => {
+    try {
+        const skip = (page - 1) * limit;
+
+        const whereCondition: any = {
+            ownerId,
+            deletedAt: null
+        };
+
+        if (status) {
+            whereCondition.status = status;
+        }
+
+        const [rooms, totalItems] = await prisma.$transaction([
+            prisma.room.findMany({
+                where: whereCondition,
+                orderBy: { created_at: 'desc' },
+                skip,
+                take: limit,
+                select: {
+                    id: true,
+                    name: true,
+                    normalized_name: true,
+                    short_description: true,
+                    full_description: true,
+                    server_banner: true,
+                    server_icon: true,
+                    created_at: true,
+                    verified: true,
+                    status: true,
+                    deletedAt: true,
+                    ownerId: true,
+                    favoritedBy: {
+                        where: { userId: ownerId },
+                        select: { userId: true }
+                    }
+                }
+            }),
+            prisma.room.count({ where: whereCondition })
+        ]);
+
+        const data = rooms.map(room => ({
+            ...room,
+            isFavorite: room.favoritedBy.length > 0
+        }));
+
+        return {
+            data,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(totalItems / limit),
+                totalItems,
+                hasNextPage: page < Math.ceil(totalItems / limit)
+            }
+        };
+    } catch (error) {
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
+    }
+};
+
+/**
  * Retrieves a paginated list of rooms by status.
  * @param status - The room status to filter by. If null, returns all non-deleted rooms.
  * @param page - The page number.

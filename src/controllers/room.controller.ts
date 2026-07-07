@@ -73,8 +73,12 @@ export const getUserRooms = async (req: Request, res: Response) => {
         throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
     }
 
-    const rooms = await RoomService.getUserRooms(user.id);
-    res.status(200).json({ success: true, data: rooms });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const status = req.query.status as 'IN_REVISION' | 'ACCEPTED' | 'REJECTED' | undefined;
+
+    const result = await RoomService.getUserRoomsPaginated(user.id, page, limit, status);
+    res.status(200).json({ success: true, ...result });
 };
 
 /**
