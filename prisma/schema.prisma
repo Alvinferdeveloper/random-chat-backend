@@ -15,7 +15,7 @@ model Room {
   full_description  String    @db.VarChar(300)
   server_banner     String    @db.VarChar(200)
   server_icon       String    @db.VarChar(200)
-  created_at        DateTime? @default(now()) @db.DateTime
+  created_at        DateTime? @default(now()) 
   verified          Boolean   @default(false)
   status            RoomStatus @default(IN_REVISION)
   deletedAt         DateTime?
@@ -55,7 +55,7 @@ model FavoriteRoom {
 model UserRoomActivity {
   userId             String    @db.Char(36)
   roomId             String    @db.Char(36)
-  lastInteraction   DateTime  @default(now()) @db.DateTime
+  lastInteraction   DateTime  @default(now()) 
   interactionCount   Int       @default(1)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
