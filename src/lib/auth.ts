@@ -7,7 +7,7 @@ import logger from './logger';
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
-        provider: "mysql",
+        provider: "postgresql",
     }),
 
     cookiePrefix: 'random-chat',
