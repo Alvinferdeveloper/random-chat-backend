@@ -23,6 +23,16 @@ router.get('/live', (_req: Request, res: Response) => {
     res.status(200).json({ status: 'ok' });
 });
 
+router.get('/db', async (_req: Request, res: Response) => {
+    const result = await checkDatabase();
+    res.status(result.status === 'healthy' ? 200 : 503).json({
+        status: result.status,
+        timestamp: new Date().toISOString(),
+        service: 'database',
+        ...(result.error ? { error: result.error } : {})
+    });
+});
+
 router.get('/ready', async (_req: Request, res: Response) => {
     const dbHealthy = (await checkDatabase()).status === 'healthy';
     const redisHealthy = (await checkRedis()).status === 'healthy';
