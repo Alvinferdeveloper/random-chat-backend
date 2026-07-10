@@ -86,7 +86,7 @@ app.use(cors({
     credentials: true
 }));
 
-app.use(csrfProtection);
+//app.use(csrfProtection);
 
 app.use(validateMaintenance);
 
