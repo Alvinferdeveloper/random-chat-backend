@@ -14,6 +14,10 @@ export const auth = betterAuth({
 
     advanced: {
         cookiePrefix: 'random-chat',
+        defaultCookieAttributes: {
+            sameSite: 'none',
+            secure: true
+        }
     },
 
     emailAndPassword: {
