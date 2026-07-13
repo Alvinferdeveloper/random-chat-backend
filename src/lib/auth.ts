@@ -16,7 +16,8 @@ export const auth = betterAuth({
         cookiePrefix: 'random-chat',
         defaultCookieAttributes: {
             sameSite: 'none',
-            secure: true
+            secure: true,
+            domain: process.env.FRONTEND_DOMAIN || undefined
         }
     },
 
