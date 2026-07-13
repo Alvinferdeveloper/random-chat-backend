@@ -17,6 +17,7 @@ const validateSession: RequestHandler = (
         }
     });
 
+    console.log(headers.get('Cookie'))
     auth.api
         .getSession({ headers })
         .then(async (session) => {
