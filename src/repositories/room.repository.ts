@@ -102,17 +102,21 @@ export const findAllPaginated = async (
         }
 
         if (options.search) {
+            const matchingCategories = await prisma.category.findMany({
+                where: { name: { contains: options.search, mode: 'insensitive' } },
+                select: { id: true }
+            });
+            const matchingCategoryIds = matchingCategories.map(c => c.id);
+
             whereCondition.OR = [
                 { normalized_name: { contains: options.search } },
-                {
+                ...(matchingCategoryIds.length > 0 ? [{
                     categories: {
                         some: {
-                            category: {
-                                name: { contains: options.search }
-                            }
+                            categoryId: { in: matchingCategoryIds }
                         }
                     }
-                }
+                }] : [])
             ];
         }
 
