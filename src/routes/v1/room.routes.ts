@@ -7,7 +7,9 @@ import {
     getUserRooms,
     getUserFavoriteRooms,
     toggleFavoriteRoom,
-    recordRoomActivity
+    recordRoomActivity,
+    deleteRoom,
+    updateRoomCategories
 } from "../../controllers/room.controller";
 import { asyncHandler } from '../../utils/asyncHandler';
 import { validate } from '../../middlewares/validate';
@@ -20,7 +22,9 @@ import {
     toggleFavoriteRoomSchema,
     recordRoomActivitySchema,
     getUserFavoriteRoomsSchema,
-    getUserRoomsSchema
+    getUserRoomsSchema,
+    deleteRoomSchema,
+    updateRoomCategoriesSchema
 } from '../../validations/room.validation';
 import validateSession from "../../middlewares/validateSession";
 import optionalSession from "../../middlewares/optionalSession";
@@ -66,6 +70,22 @@ export default (chatService: ChatService) => {
         validateSession,
         validate(updateRoomSchema),
         asyncHandler(updateRoom)
+    );
+
+    // Protected route to update a room's categories
+    router.patch(
+        '/:roomId/categories',
+        validateSession,
+        validate(updateRoomCategoriesSchema),
+        asyncHandler(updateRoomCategories)
+    );
+
+    // Protected route to soft delete a room (owner only)
+    router.delete(
+        '/:roomId',
+        validateSession,
+        validate(deleteRoomSchema),
+        asyncHandler(deleteRoom)
     );
 
     return router;

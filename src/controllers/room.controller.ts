@@ -132,3 +132,31 @@ export const recordRoomActivity = async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true, message: 'Actividad registrada.' });
 };
+
+/**
+ * Soft deletes a room owned by the authenticated user.
+ */
+export const deleteRoom = async (req: Request, res: Response) => {
+    const user = req.user;
+    if (!user || !user.id) throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
+
+    const { roomId } = req.params;
+    await RoomService.deleteRoom(roomId, user.id);
+
+    res.status(200).json({ success: true, message: 'Sala eliminada correctamente.' });
+};
+
+/**
+ * Updates the categories of a room owned by the authenticated user.
+ */
+export const updateRoomCategories = async (req: Request, res: Response) => {
+    const user = req.user;
+    if (!user || !user.id) throw new ApiError(401, ERROR_MESSAGES.UNAUTHORIZED);
+
+    const { roomId } = req.params;
+    const { categoryIds } = req.body;
+
+    await RoomService.updateRoomCategories(roomId, categoryIds, user.id);
+
+    res.status(200).json({ success: true, message: 'Categorías actualizadas.' });
+};

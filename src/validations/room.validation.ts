@@ -77,6 +77,21 @@ export const recordRoomActivitySchema = z.object({
     }),
 });
 
+export const deleteRoomSchema = z.object({
+    params: z.object({
+        roomId: z.string().uuid('ID de sala inválido.'),
+    }),
+});
+
+export const updateRoomCategoriesSchema = z.object({
+    params: z.object({
+        roomId: z.string().uuid('ID de sala inválido.'),
+    }),
+    body: z.object({
+        categoryIds: z.array(z.string().uuid('ID de categoría inválido.')).max(3, 'Máximo 3 categorías.'),
+    }),
+});
+
 export const getUserRoomsSchema = z.object({
     query: z.object({
         page: z.coerce.number().int().positive().optional().default(1),

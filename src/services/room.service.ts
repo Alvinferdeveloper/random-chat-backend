@@ -188,7 +188,11 @@ export const updateRoomAttribute = async (roomId: string, field: string, value: 
     if (!room) {
         throw new ApiError(404, ERROR_MESSAGES.ROOM_NOT_FOUND);
     }
-    if (room.ownerId !== userId) {
+    const id1 = String(userId).trim();
+    const id2 = String(room.ownerId).trim();
+    const isOwner = Boolean(id1) && id1 === id2;
+
+    if (!isOwner) {
         throw new ApiError(403, ERROR_MESSAGES.NOT_ROOM_OWNER);
     }
 
@@ -269,4 +273,53 @@ export const validateRoomListParams = (page: number, limit: number) => {
     if (limit < 1 || limit > 100) {
         throw new ApiError(400, ERROR_MESSAGES.INVALID_LIMIT);
     }
+};
+
+/**
+ * Soft deletes a room after verifying ownership.
+ * @param roomId - The ID of the room.
+ * @param userId - The ID of the user requesting the deletion.
+ */
+export const deleteRoom = async (roomId: string, userId: string) => {
+    const room = await RoomRepository.findByIdAnyStatus(roomId);
+    if (!room) {
+        throw new ApiError(404, ERROR_MESSAGES.ROOM_NOT_FOUND);
+    }
+    const id1 = String(userId).trim();
+    const id2 = String(room.ownerId).trim();
+
+    const isOwner = Boolean(id1) && id1 === id2;
+    if (!isOwner) {
+        throw new ApiError(403, ERROR_MESSAGES.NOT_ROOM_OWNER);
+    }
+    await RoomRepository.softDelete(roomId);
+};
+
+/**
+ * Updates the categories of a room after verifying ownership.
+ * @param roomId - The ID of the room.
+ * @param categoryIds - Array of category IDs to set.
+ * @param userId - The ID of the user requesting the update.
+ */
+export const updateRoomCategories = async (roomId: string, categoryIds: string[], userId: string) => {
+    const room = await RoomRepository.findByIdAnyStatus(roomId);
+    if (!room) {
+        throw new ApiError(404, ERROR_MESSAGES.ROOM_NOT_FOUND);
+    }
+    const id1 = String(userId).trim();
+    const id2 = String(room.ownerId).trim();
+    const isOwner = Boolean(id1) && id1 === id2;
+
+    if (!isOwner) {
+        throw new ApiError(403, ERROR_MESSAGES.NOT_ROOM_OWNER);
+    }
+
+    if (categoryIds && categoryIds.length > 0) {
+        const validCategories = await CategoryRepository.categoriesExist(categoryIds);
+        if (!validCategories) {
+            throw new ApiError(400, ERROR_MESSAGES.INVALID_CATEGORIES);
+        }
+    }
+
+    await RoomRepository.updateCategories(roomId, categoryIds);
 };

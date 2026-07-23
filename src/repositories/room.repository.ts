@@ -331,6 +331,25 @@ export const softDelete = async (roomId: string) => {
 };
 
 /**
+ * Replaces all categories for a room.
+ * @param roomId - The ID of the room.
+ * @param categoryIds - Array of category IDs to set.
+ */
+export const updateCategories = async (roomId: string, categoryIds: string[]) => {
+    try {
+        await prisma.roomCategory.deleteMany({ where: { roomId } });
+        if (categoryIds.length > 0) {
+            await prisma.roomCategory.createMany({
+                data: categoryIds.map(categoryId => ({ roomId, categoryId }))
+            });
+        }
+    } catch (error) {
+        logger.error('Error updating room categories', { error: (error as Error).message });
+        throw new ApiError(500, ERROR_MESSAGES.INTERNAL_ERROR);
+    }
+};
+
+/**
  * Retrieves all non-deleted rooms belonging to a specific owner.
  * @param ownerId - The ID of the owner user.
  * @returns A promise that resolves to an array of room objects.
@@ -414,16 +433,23 @@ export const findByOwnerIdPaginated = async (ownerId: string, page: number, limi
                     favoritedBy: {
                         where: { userId: ownerId },
                         select: { userId: true }
+                    },
+                    categories: {
+                        include: { category: true }
                     }
                 }
             }),
             prisma.room.count({ where: whereCondition })
         ]);
 
-        const data = rooms.map(room => ({
-            ...room,
-            isFavorite: room.favoritedBy.length > 0
-        }));
+        const data = rooms.map(room => {
+            const { favoritedBy, categories, ...roomData } = room;
+            return {
+                ...roomData,
+                isFavorite: favoritedBy.length > 0,
+                categories: (categories || []).map((rc: any) => rc.category)
+            };
+        });
 
         return {
             data,

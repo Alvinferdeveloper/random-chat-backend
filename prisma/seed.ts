@@ -23,7 +23,18 @@ const categories = [
     { name: 'Noticias', icon: '📰' }
 ];
 
-const defaultRooms = [
+type DefaultRoom = {
+    name: string;
+    normalized_name: string;
+    short_description: string;
+    full_description: string;
+    server_banner: string;
+    server_icon: string;
+    status: RoomStatus;
+    categoryNames: string[];
+};
+
+const defaultRooms: DefaultRoom[] = [
     {
         name: 'Rincón Musical',
         normalized_name: 'rincon-musical',
@@ -32,6 +43,7 @@ const defaultRooms = [
         server_banner: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=1200&h=400&fit=crop',
         server_icon: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=200&h=200&fit=crop',
         status: RoomStatus.ACCEPTED,
+        categoryNames: ['Música', 'Entretenimiento'],
     },
     {
         name: 'Gamers Unite',
@@ -41,6 +53,7 @@ const defaultRooms = [
         server_banner: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&h=400&fit=crop',
         server_icon: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=200&h=200&fit=crop',
         status: RoomStatus.ACCEPTED,
+        categoryNames: ['Gaming', 'Entretenimiento'],
     },
     {
         name: 'Club de Lectura',
@@ -50,6 +63,7 @@ const defaultRooms = [
         server_banner: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1200&h=400&fit=crop',
         server_icon: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=200&h=200&fit=crop',
         status: RoomStatus.ACCEPTED,
+        categoryNames: ['Entretenimiento'],
     },
     {
         name: 'Café y Conversación',
@@ -59,6 +73,7 @@ const defaultRooms = [
         server_banner: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1200&h=400&fit=crop',
         server_icon: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=200&h=200&fit=crop',
         status: RoomStatus.ACCEPTED,
+        categoryNames: ['Noticias'],
     },
     {
         name: 'Galería de Arte',
@@ -68,6 +83,7 @@ const defaultRooms = [
         server_banner: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=1200&h=400&fit=crop',
         server_icon: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=200&h=200&fit=crop',
         status: RoomStatus.ACCEPTED,
+        categoryNames: ['Arte', 'Entretenimiento'],
     },
     {
         name: 'Trotamundos',
@@ -77,6 +93,7 @@ const defaultRooms = [
         server_banner: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&h=400&fit=crop',
         server_icon: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=200&h=200&fit=crop',
         status: RoomStatus.ACCEPTED,
+        categoryNames: ['Noticias'],
     },
     {
         name: 'Enfoque Fotográfico',
@@ -86,6 +103,7 @@ const defaultRooms = [
         server_banner: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=1200&h=400&fit=crop',
         server_icon: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=200&h=200&fit=crop',
         status: RoomStatus.ACCEPTED,
+        categoryNames: ['Arte', 'Noticias'],
     },
     {
         name: 'Zona Fitness',
@@ -95,6 +113,7 @@ const defaultRooms = [
         server_banner: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&h=400&fit=crop',
         server_icon: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=200&h=200&fit=crop',
         status: RoomStatus.ACCEPTED,
+        categoryNames: ['Deportes'],
     },
     {
         name: 'Plaza General',
@@ -104,6 +123,7 @@ const defaultRooms = [
         server_banner: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1200&h=400&fit=crop',
         server_icon: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=200&h=200&fit=crop',
         status: RoomStatus.ACCEPTED,
+        categoryNames: ['Noticias', 'Deportes', 'Gaming'],
     },
     {
         name: 'Tech Talk',
@@ -113,6 +133,7 @@ const defaultRooms = [
         server_banner: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&h=400&fit=crop',
         server_icon: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=200&h=200&fit=crop',
         status: RoomStatus.ACCEPTED,
+        categoryNames: ['Tecnología', 'Ciencia'],
     }
 ];
 
@@ -141,23 +162,63 @@ async function main() {
     }
     console.log(`✅ ${categories.length} categorías creadas\n`);
 
-    // Seed de salas por defecto
-    console.log('🏠 Creando salas por defecto...');
+    // Seed de salas por defecto con categorías
+    console.log('🏠 Creando salas por defecto con categorías...');
     for (const room of defaultRooms) {
-        await prisma.room.upsert({
+        const { categoryNames, ...roomData } = room;
+
+        const existingRoom = await prisma.room.findUnique({
             where: { normalized_name: room.normalized_name },
-            update: {
-                verified: true,
-                name: room.name,
-                short_description: room.short_description,
-                full_description: room.full_description,
-                server_banner: room.server_banner,
-                server_icon: room.server_icon,
-            },
-            create: room,
+            select: { id: true }
         });
+
+        if (existingRoom) {
+            await prisma.room.update({
+                where: { id: existingRoom.id },
+                data: {
+                    verified: true,
+                    name: room.name,
+                    short_description: room.short_description,
+                    full_description: room.full_description,
+                    server_banner: room.server_banner,
+                    server_icon: room.server_icon,
+                }
+            });
+            // Sync categories: delete existing and recreate
+            await prisma.roomCategory.deleteMany({ where: { roomId: existingRoom.id } });
+            if (categoryNames.length > 0) {
+                const cats = await prisma.category.findMany({
+                    where: { name: { in: categoryNames } },
+                    select: { id: true }
+                });
+                if (cats.length > 0) {
+                    await prisma.roomCategory.createMany({
+                        data: cats.map(cat => ({ roomId: existingRoom.id, categoryId: cat.id }))
+                    });
+                }
+            }
+        } else {
+            const cats = categoryNames.length > 0
+                ? await prisma.category.findMany({
+                    where: { name: { in: categoryNames } },
+                    select: { id: true }
+                })
+                : [];
+
+            await prisma.room.create({
+                data: {
+                    ...roomData,
+                    verified: true,
+                    ...(cats.length > 0 ? {
+                        categories: {
+                            create: cats.map(cat => ({ categoryId: cat.id }))
+                        }
+                    } : {})
+                }
+            });
+        }
     }
-    console.log(`✅ ${defaultRooms.length} salas creadas\n`);
+    console.log(`✅ ${defaultRooms.length} salas creadas con categorías\n`);
 
     // Seed de settings globales
     const defaultSettings = [
