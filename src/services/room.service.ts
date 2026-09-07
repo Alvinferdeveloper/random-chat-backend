@@ -103,7 +103,11 @@ export const createRoom = async (roomData: Omit<Room, 'id' | 'created_at'>, user
         ...roomData,
         ownerId: userId,
         normalized_name: newRoomNormalized,
-        categoryIds: categoryIds || []
+        categoryIds: categoryIds || [],
+        // TODO: revert to the schema default (IN_REVISION) once the app has
+        // enough traffic to justify manual moderation before a room goes live.
+        // For now, auto-accepting lets new users see their room immediately.
+        status: 'ACCEPTED'
     });
 
     if (redisClient) {
