@@ -16,6 +16,26 @@ export const getRooms = async (req: Request, res: Response) => {
     res.status(200).json(paginatedData);
 };
 
+export const getRoomById = async (req: Request, res: Response) => {
+    const { roomId } = req.params;
+    const room = await RoomService.roomExists(roomId);
+
+    if (!room) {
+        throw new ApiError(404, ERROR_MESSAGES.ROOM_NOT_FOUND);
+    }
+
+    res.status(200).json({
+        data: {
+            id: room.id,
+            name: room.name,
+            short_description: room.short_description,
+            server_icon: room.server_icon,
+            server_banner: room.server_banner,
+            verified: room.verified,
+        },
+    });
+};
+
 export const createRoom = (chatService: ChatService) => async (req: Request, res: Response) => {
     const user = req.user;
     if (!user || !user.id) {

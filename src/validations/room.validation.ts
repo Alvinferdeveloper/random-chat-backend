@@ -65,6 +65,12 @@ export const updateRoomSchema = z.object({
     ),
 });
 
+export const getRoomByIdSchema = z.object({
+    params: z.object({
+        roomId: z.string().uuid('ID de sala inválido.'),
+    }),
+});
+
 export const toggleFavoriteRoomSchema = z.object({
     params: z.object({
         roomId: z.string().uuid('ID de sala inválido.'),

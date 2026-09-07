@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
     getRooms,
+    getRoomById,
     createRoom,
     generateRoomUploadUrl,
     updateRoom,
@@ -16,6 +17,7 @@ import { validate } from '../../middlewares/validate';
 import { createRoomLimiter, listLimiter } from '@/config/rateLimiters';
 import {
     getRoomsSchema,
+    getRoomByIdSchema,
     createRoomSchema,
     generateRoomUploadUrlSchema,
     updateRoomSchema,
@@ -40,6 +42,9 @@ export default (chatService: ChatService) => {
 
     // Protected route to get user's favorite rooms
     router.get('/favorites', validateSession, validate(getUserFavoriteRoomsSchema), asyncHandler(getUserFavoriteRooms));
+
+    // Public route to get a single room's public info (e.g. for a shared chat link)
+    router.get('/:roomId', validate(getRoomByIdSchema), asyncHandler(getRoomById));
 
     // Protected route to create a new room
     router.post(
