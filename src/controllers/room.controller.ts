@@ -29,6 +29,7 @@ export const getRoomById = async (req: Request, res: Response) => {
             id: room.id,
             name: room.name,
             short_description: room.short_description,
+            full_description: room.full_description,
             server_icon: room.server_icon,
             server_banner: room.server_banner,
             verified: room.verified,
