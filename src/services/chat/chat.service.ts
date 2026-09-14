@@ -130,7 +130,7 @@ export class ChatService {
         this.io.to([...this.adminSockets]).emit('admin-new-report', payload);
     }
 
-    public emitNewRoom(payload: { roomId: string; name: string; ownerUsername: string }): void {
+    public emitNewRoom(payload: { roomId: string; name: string; ownerUsername: string; status: string }): void {
         this.io.to([...this.adminSockets]).emit('admin-room-created', payload);
     }
 

@@ -50,6 +50,7 @@ export const createRoom = (chatService: ChatService) => async (req: Request, res
         roomId: newRoom.id,
         name: newRoom.name,
         ownerUsername: (user as any).username || 'Desconocido',
+        status: newRoom.status,
     });
 
     res.status(201).json({ success: true, message: 'Sala creada exitosamente.', data: newRoom });
