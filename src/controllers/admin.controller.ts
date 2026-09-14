@@ -15,7 +15,7 @@ export const sendBroadcast = (chatService: ChatService) => async (req: Request, 
     const { message } = req.body;
 
     if (!message || message.trim().length === 0) {
-        throw new ApiError(400, "El mensaje no puede estar vacío.");
+        throw new ApiError(400, ERROR_MESSAGES.BROADCAST_MESSAGE_EMPTY);
     }
 
     chatService.broadcastGlobalMessage(message);
@@ -91,6 +91,7 @@ export const getRoomsByStatus = async (req: Request, res: Response) => {
     const statusParam = (req.query.status as string) || 'IN_REVISION';
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const search = (req.query.search as string) || undefined;
 
     const validStatuses = ['IN_REVISION', 'ACCEPTED', 'REJECTED', 'ALL'];
     if (!validStatuses.includes(statusParam)) {
@@ -98,7 +99,7 @@ export const getRoomsByStatus = async (req: Request, res: Response) => {
     }
 
     const dbStatus = statusParam === 'ALL' ? null : statusParam as 'IN_REVISION' | 'ACCEPTED' | 'REJECTED';
-    const data = await RoomRepository.findAllByStatus(dbStatus, page, limit);
+    const data = await RoomRepository.findAllByStatus(dbStatus, page, limit, search);
     res.status(200).json(data);
 };
 
@@ -145,7 +146,7 @@ export const updateUserRole = async (req: Request, res: Response) => {
 
     // Safety: Admin cannot demote themselves
     if (req.user!.id === userId && role !== 'ADMIN') {
-        throw new ApiError(400, "No puedes degradar tu propio rol de administrador.");
+        throw new ApiError(400, ERROR_MESSAGES.CANNOT_DEMOTE_SELF);
     }
 
     const updatedUser = await UserRepository.updateRole(userId, role);

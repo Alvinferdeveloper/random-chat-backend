@@ -475,12 +475,19 @@ export const findByOwnerIdPaginated = async (ownerId: string, page: number, limi
  * @param page - The page number.
  * @param limit - The items per page.
  */
-export const findAllByStatus = async (status: 'IN_REVISION' | 'ACCEPTED' | 'REJECTED' | null, page: number, limit: number) => {
+export const findAllByStatus = async (status: 'IN_REVISION' | 'ACCEPTED' | 'REJECTED' | null, page: number, limit: number, search?: string) => {
     try {
         const skip = (page - 1) * limit;
         const where: any = { deletedAt: null };
         if (status) {
             where.status = status;
+        }
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+                { owner: { username: { contains: search, mode: 'insensitive' } } },
+                { owner: { email: { contains: search, mode: 'insensitive' } } },
+            ];
         }
         const [rooms, totalItems] = await prisma.$transaction([
             prisma.room.findMany({
