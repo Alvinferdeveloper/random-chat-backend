@@ -94,6 +94,7 @@ model User {
   favoriteGifs       FavoriteGif[]
   reportsMade        Report[]           @relation("ReportsMade")
   reportsReceived     Report[]           @relation("ReportsReceived")
+  auditLogs          AdminAuditLog[]    @relation("AdminAuditLogs")
 
   @@unique([email])
   @@map("user")
@@ -247,4 +248,20 @@ model GlobalSetting {
   updatedAt   DateTime @updatedAt
 
   @@map("global_setting")
+}
+
+model AdminAuditLog {
+  id         String   @id @default(uuid()) @db.Char(36)
+  adminId    String
+  admin      User     @relation("AdminAuditLogs", fields: [adminId], references: [id], onDelete: Cascade)
+  action     String   @db.VarChar(50)
+  targetType String   @db.VarChar(20)
+  targetId   String?  @db.VarChar(64)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@index([adminId])
+  @@index([createdAt])
+  @@map("admin_audit_log")
 }

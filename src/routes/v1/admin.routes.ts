@@ -9,7 +9,8 @@ import {
     sendBroadcast,
     updateUserRole,
     getActiveRooms,
-    getUserDetails
+    getUserDetails,
+    getAuditLog
 } from "../../controllers/admin.controller";
 import { getAllSettings, updateSetting } from "../../controllers/setting.controller";
 import { asyncHandler } from '../../utils/asyncHandler';
@@ -20,7 +21,8 @@ import {
     updateRoomCategoriesSchema,
     getUsersSchema,
     updateUserBanStatusSchema,
-    updateUserRoleSchema
+    updateUserRoleSchema,
+    getAuditLogSchema
 } from '../../validations/admin.validation';
 import { updateSettingSchema } from '../../validations/setting.validation';
 import validateSession from "../../middlewares/validateSession";
@@ -49,6 +51,8 @@ export default (chatService: ChatService) => {
     // Global settings
     router.get('/settings', asyncHandler(getAllSettings));
     router.patch('/settings/:key', validate(updateSettingSchema), asyncHandler(updateSetting));
+
+    router.get('/audit-log', validate(getAuditLogSchema), asyncHandler(getAuditLog));
 
     return router;
 };

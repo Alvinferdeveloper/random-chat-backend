@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as SettingService from '../services/setting.service';
+import * as AuditLogRepository from '../repositories/audit-log.repository';
 import ApiError from '../utils/ApiError';
 
 /**
@@ -29,6 +30,14 @@ export const updateSetting = async (req: Request, res: Response) => {
     const { value, description } = req.body;
 
     const updated = await SettingService.updateSetting(key, value, description);
+
+    AuditLogRepository.logAction({
+        adminId: req.user!.id,
+        action: 'SETTING_UPDATED',
+        targetType: 'SETTING',
+        targetId: key,
+        metadata: { value },
+    });
 
     res.status(200).json({
         success: true,

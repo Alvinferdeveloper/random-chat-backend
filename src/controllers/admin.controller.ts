@@ -4,6 +4,7 @@ import * as UserRepository from '../repositories/user.repository';
 import * as ReportRepository from '../repositories/report.repository';
 import * as UserActivityRepository from '../repositories/user-room-activity.repository';
 import * as CategoryRepository from '../repositories/category.repository';
+import * as AuditLogRepository from '../repositories/audit-log.repository';
 import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 import { RoomStatus } from "@prisma/client";
 import { ChatService } from "../services/chat/chat.service";
@@ -20,6 +21,13 @@ export const sendBroadcast = (chatService: ChatService) => async (req: Request, 
     }
 
     chatService.broadcastGlobalMessage(message);
+
+    AuditLogRepository.logAction({
+        adminId: req.user!.id,
+        action: 'BROADCAST_SENT',
+        targetType: 'SYSTEM',
+        metadata: { message },
+    });
 
     res.status(200).json({
         success: true,
@@ -117,6 +125,15 @@ export const updateRoomStatus = async (req: Request, res: Response) => {
     }
 
     const updatedRoom = await RoomRepository.updateStatus(roomId, status);
+
+    AuditLogRepository.logAction({
+        adminId: req.user!.id,
+        action: 'ROOM_STATUS_CHANGED',
+        targetType: 'ROOM',
+        targetId: roomId,
+        metadata: { newStatus: status },
+    });
+
     res.status(200).json({
         success: true,
         message: `Sala ${status.toLowerCase()} correctamente.`,
@@ -145,6 +162,15 @@ export const updateRoomCategories = async (req: Request, res: Response) => {
     }
 
     await RoomRepository.updateCategories(roomId, categoryIds);
+
+    AuditLogRepository.logAction({
+        adminId: req.user!.id,
+        action: 'ROOM_CATEGORIES_UPDATED',
+        targetType: 'ROOM',
+        targetId: roomId,
+        metadata: { categoryIds },
+    });
+
     res.status(200).json({ success: true });
 };
 
@@ -175,6 +201,15 @@ export const updateUserRole = async (req: Request, res: Response) => {
     }
 
     const updatedUser = await UserRepository.updateRole(userId, role);
+
+    AuditLogRepository.logAction({
+        adminId: req.user!.id,
+        action: 'USER_ROLE_CHANGED',
+        targetType: 'USER',
+        targetId: userId,
+        metadata: { newRole: role },
+    });
+
     res.status(200).json({
         success: true,
         message: `Rol de usuario actualizado a ${role.toLowerCase()} correctamente.`,
@@ -190,11 +225,33 @@ export const updateUserBanStatus = async (req: Request, res: Response) => {
     const { isBanned, banReason } = req.body;
 
     const updatedUser = await UserRepository.updateBanStatus(userId, isBanned, banReason);
+
+    AuditLogRepository.logAction({
+        adminId: req.user!.id,
+        action: isBanned ? 'USER_BANNED' : 'USER_UNBANNED',
+        targetType: 'USER',
+        targetId: userId,
+        metadata: isBanned ? { banReason } : undefined,
+    });
+
     res.status(200).json({
         success: true,
         message: `Usuario ${isBanned ? 'baneado' : 'desbaneado'} correctamente.`,
         data: updatedUser
     });
+};
+
+/**
+ * Retrieves a paginated, optionally filtered list of admin audit log entries.
+ */
+export const getAuditLog = async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const action = req.query.action as string | undefined;
+    const targetType = req.query.targetType as string | undefined;
+
+    const data = await AuditLogRepository.findAll(page, limit, { action, targetType });
+    res.status(200).json(data);
 };
 
 /**

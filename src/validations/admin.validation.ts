@@ -28,6 +28,15 @@ export const updateRoomCategoriesSchema = z.object({
     }),
 });
 
+export const getAuditLogSchema = z.object({
+    query: z.object({
+        page: z.coerce.number().int().positive().optional().default(1),
+        limit: z.coerce.number().int().positive().max(100).optional().default(20),
+        action: z.string().optional(),
+        targetType: z.enum(['ROOM', 'USER', 'REPORT', 'SETTING', 'SYSTEM']).optional(),
+    }),
+});
+
 export const getUsersSchema = z.object({
     query: z.object({
         page: z.coerce.number().int().positive().optional().default(1),

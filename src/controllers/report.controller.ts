@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as ReportRepository from '../repositories/report.repository';
+import * as AuditLogRepository from '../repositories/audit-log.repository';
 import ApiError from '../utils/ApiError';
 
 /**
@@ -57,7 +58,14 @@ export const resolveUserReports = async (req: Request, res: Response) => {
     const { status } = req.body;
 
     await ReportRepository.updateStatusByReportedUser(userId, status);
-    
+
+    AuditLogRepository.logAction({
+        adminId: req.user!.id,
+        action: status === 'RESOLVED' ? 'REPORT_RESOLVED' : 'REPORT_DISMISSED',
+        targetType: 'USER',
+        targetId: userId,
+    });
+
     res.status(200).json({
         success: true,
         message: `Reportes marcados como ${status.toLowerCase()} correctamente.`
