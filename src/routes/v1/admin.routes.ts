@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
     getRoomsByStatus,
     updateRoomStatus,
+    updateRoomCategories,
     getUsers,
     updateUserBanStatus,
     getStats,
@@ -16,6 +17,7 @@ import { validate } from '../../middlewares/validate';
 import {
     getRoomsByStatusSchema,
     updateRoomStatusSchema,
+    updateRoomCategoriesSchema,
     getUsersSchema,
     updateUserBanStatusSchema,
     updateUserRoleSchema
@@ -37,6 +39,7 @@ export default (chatService: ChatService) => {
 
     router.get('/rooms', validate(getRoomsByStatusSchema), asyncHandler(getRoomsByStatus));
     router.patch('/rooms/:roomId/status', validate(updateRoomStatusSchema), asyncHandler(updateRoomStatus));
+    router.patch('/rooms/:roomId/categories', validate(updateRoomCategoriesSchema), asyncHandler(updateRoomCategories));
 
     router.get('/users', validate(getUsersSchema), asyncHandler(getUsers));
     router.get('/users/:userId/details', asyncHandler(getUserDetails));

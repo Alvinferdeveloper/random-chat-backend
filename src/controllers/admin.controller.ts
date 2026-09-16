@@ -3,6 +3,7 @@ import * as RoomRepository from '../repositories/room.repository';
 import * as UserRepository from '../repositories/user.repository';
 import * as ReportRepository from '../repositories/report.repository';
 import * as UserActivityRepository from '../repositories/user-room-activity.repository';
+import * as CategoryRepository from '../repositories/category.repository';
 import ApiError, { ERROR_MESSAGES } from '../utils/ApiError';
 import { RoomStatus } from "@prisma/client";
 import { ChatService } from "../services/chat/chat.service";
@@ -121,6 +122,30 @@ export const updateRoomStatus = async (req: Request, res: Response) => {
         message: `Sala ${status.toLowerCase()} correctamente.`,
         data: updatedRoom
     });
+};
+
+/**
+ * Updates a room's categories (admin can moderate categories on any room,
+ * regardless of ownership, unlike the owner-scoped endpoint).
+ */
+export const updateRoomCategories = async (req: Request, res: Response) => {
+    const { roomId } = req.params;
+    const { categoryIds } = req.body;
+
+    const room = await RoomRepository.findByIdAnyStatus(roomId);
+    if (!room) {
+        throw new ApiError(404, ERROR_MESSAGES.ROOM_NOT_FOUND);
+    }
+
+    if (categoryIds && categoryIds.length > 0) {
+        const validCategories = await CategoryRepository.categoriesExist(categoryIds);
+        if (!validCategories) {
+            throw new ApiError(400, ERROR_MESSAGES.INVALID_CATEGORIES);
+        }
+    }
+
+    await RoomRepository.updateCategories(roomId, categoryIds);
+    res.status(200).json({ success: true });
 };
 
 /**

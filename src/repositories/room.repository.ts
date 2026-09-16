@@ -498,14 +498,25 @@ export const findAllByStatus = async (status: 'IN_REVISION' | 'ACCEPTED' | 'REJE
                 include: {
                     owner: {
                         select: { name: true, email: true, username: true }
+                    },
+                    categories: {
+                        include: { category: true }
                     }
                 }
             }),
             prisma.room.count({ where })
         ]);
 
+        const data = rooms.map(room => {
+            const { categories, ...roomData } = room as any;
+            return {
+                ...roomData,
+                categories: (categories || []).map((rc: any) => rc.category)
+            };
+        });
+
         return {
-            data: rooms,
+            data,
             meta: {
                 page,
                 totalPages: Math.ceil(totalItems / limit),
