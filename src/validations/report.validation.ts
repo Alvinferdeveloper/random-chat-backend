@@ -29,3 +29,14 @@ export const resolveReportsSchema = z.object({
         })
     })
 });
+
+export const resolveReportSchema = z.object({
+    params: z.object({
+        reportId: z.string(),
+    }),
+    body: z.object({
+        status: z.enum(['RESOLVED', 'DISMISSED'], {
+            error: "Estado de resolución no válido."
+        })
+    })
+});

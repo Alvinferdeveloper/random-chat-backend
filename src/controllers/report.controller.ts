@@ -71,3 +71,28 @@ export const resolveUserReports = async (req: Request, res: Response) => {
         message: `Reportes marcados como ${status.toLowerCase()} correctamente.`
     });
 };
+
+/**
+ * Resolves or dismisses a single report, leaving the reported user's
+ * other pending reports untouched.
+ */
+export const resolveReport = async (req: Request, res: Response) => {
+    const { reportId } = req.params;
+    const { status } = req.body;
+
+    const updated = await ReportRepository.updateStatusById(reportId, status);
+
+    AuditLogRepository.logAction({
+        adminId: req.user!.id,
+        action: status === 'RESOLVED' ? 'REPORT_RESOLVED' : 'REPORT_DISMISSED',
+        targetType: 'REPORT',
+        targetId: reportId,
+        metadata: { reportedUserId: updated.reportedUserId },
+    });
+
+    res.status(200).json({
+        success: true,
+        message: `Reporte marcado como ${status.toLowerCase()} correctamente.`,
+        data: updated,
+    });
+};

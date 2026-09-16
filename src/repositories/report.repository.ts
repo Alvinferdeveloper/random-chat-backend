@@ -156,6 +156,17 @@ export const updateStatusByReportedUser = async (reportedUserId: string, status:
 };
 
 /**
+ * Updates the status of a single report, leaving the reported user's
+ * other pending reports untouched.
+ */
+export const updateStatusById = async (reportId: string, status: ReportStatus) => {
+    return prisma.report.update({
+        where: { id: reportId },
+        data: { status }
+    });
+};
+
+/**
  * Retrieves reports made by a specific user (as reporter).
  */
 export const findByReporter = async (reporterId: string) => {
